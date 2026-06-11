@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Logistik Dashboard</title>
+    <style>
+      body {
+        background-color: #2c001e;
+        color: white;
+        font-family: Ubuntu, sans-serif;
+        padding: 20px;
+      }
+      .card {
+        background: #5e2750;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+      a {
+        color: #e95420;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 1.2em;
+        display: block;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Logistik Dashboard</h1>
+    <div class="card">
+      <a href="admin.html" target="_blank">📦 Produkte verwalten</a>
+      <a href="loading.html" target="_blank">🚚 Lade-Übersicht</a>
+      <a href="tour.html" target="_blank">📍 Fahrer-Tour</a>
+    </div>
+
+    <script>
+      // Wenn der Admin-Status nicht gesetzt ist, sofort rauswerfen
+      if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Zugriff verweigert! Nur für Logistik-Personal.");
+        window.location.href = "bestellung.html?code=SON-001"; // Oder eine Fehlerseite
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fahrer-Tour</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 15px;
+      }
+      .item {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+      }
+      .delivered {
+        background-color: #d4edda;
+      }
+      .refused {
+        background-color: #f8d7da;
+      }
+      button {
+        padding: 10px;
+        margin-right: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tour für heute</h1>
+    <div id="tour-list">Lade Tour...</div>
+
+    <script>
+      async function loadTour() {
+        const res = await fetch("/api/delivery-tour", {
+          headers: { "x-admin-key": "ich-liebe-naime" }, 
+        });
+        const items = await res.json();
+        const container = document.getElementById("tour-list");
+
+        container.innerHTML = items
+          .map(
+            (item) => `
+                <div class="item ${item.status === "delivered" ? "delivered" : item.status === "refused" ? "refused" : ""}">
+                    <strong>${item.customer_name}</strong><br>
+                    ${item.product_name} (${item.quantity})<br>
+                    Status: <b>${item.status}</b><br>
+                    <button onclick="updateStatus(${item.id}, 'delivered')">✅ Geliefert</button>
+                    <button onclick="updateStatus(${item.id}, 'refused')">❌ Ablehnen</button>
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      async function updateStatus(itemId, newStatus) {
+        await fetch(`/api/update-status/${itemId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "x-admin-key": "ich-liebe-naime" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        loadTour(); // Automatischer Refresh der Liste
+      }
+
+      loadTour();
+    </script>
+  </body>
+</html>

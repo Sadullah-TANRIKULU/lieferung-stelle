@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin - Produktverwaltung</title>
+    <style>
+      body {
+        font-family: Ubuntu, sans-serif;
+        padding: 20px;
+        max-width: 400px;
+        background-color: #2c001e;
+        color: white;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        box-sizing: border-box;
+        border-radius: 5px;
+        border: none;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #e95420;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      #preview {
+        margin-top: 15px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Neues Produkt</h1>
+
+    <input id="prodName" placeholder="Produktname" />
+
+    <select id="prodUnit">
+      <option value="kg">kg</option>
+      <option value="Stück">Stück</option>
+      <option value="Bund">Bund</option>
+      <option value="Kiste">Kiste</option>
+    </select>
+
+    <input id="prodImage" placeholder="Dateiname (z.B. kartoffel.jpg)" />
+
+    <button onclick="addProduct()">Produkt speichern</button>
+
+    <div id="preview">
+      <img
+        src=""
+        id="previewImg"
+        style="max-width: 150px; display: none; border-radius: 8px"
+      />
+    </div>
+
+    <script>
+      // Sicherheits-Check
+      if (localStorage.getItem("isAdmin") !== "true") {
+        window.location.href = "index.html";
+      }
+
+      // Bild-Vorschau (nutzt automatisch den assets-Ordner)
+      document.getElementById("prodImage").addEventListener("input", (e) => {
+        const preview = document.getElementById("previewImg");
+        preview.src = "assets/" + e.target.value;
+        preview.style.display = "block";
+      });
+
+      async function addProduct() {
+        const name = document.getElementById("prodName").value;
+        const unit = document.getElementById("prodUnit").value;
+        // Automatischer Präfix
+        const image_url =
+          "assets/" + document.getElementById("prodImage").value;
+
+        const res = await fetch("/api/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-key": "ich-liebe-naime",
+          },
+          body: JSON.stringify({ name, unit, image_url }),
+        });
+
+        if (res.ok) {
+          alert("Produkt gespeichert!");
+          // Formular leeren
+          document.getElementById("prodName").value = "";
+          document.getElementById("prodImage").value = "";
+          document.getElementById("previewImg").style.display = "none";
+        } else {
+          alert("Fehler: Zugriff verweigert oder Server-Fehler.");
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lade-Übersicht</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      .customer-card {
+        padding: 15px;
+        border-bottom: 2px solid #333;
+        font-size: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Lade-Übersicht (Gesamt)</h1>
+    <div id="loading-list">Lade Daten...</div>
+
+    <script>
+      async function loadSummary() {
+        const res = await fetch("/api/loading-summary", {
+          headers: { "x-admin-key": "ich-liebe-naime"  }, 
+        });
+        const data = await res.json();
+        document.getElementById("loading-list").innerHTML = data
+          .map(
+            (d) => `
+                <div class="customer-card">
+                    <b>${d.customer_name}:</b> ${d.total_items} Kisten/Einheiten
+                </div>
+            `,
+          )
+          .join("");
+      }
+      loadSummary();
+    </script>
+  </body>
+</html>

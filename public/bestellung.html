@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bestellung erfassen</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 40px;
+      }
+      .product {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 10px;
+      }
+      input {
+        width: 8rem;
+        margin-left: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Bestellung</h1>
+    <div id="product-list">Lädt...</div>
+    <button onclick="submitOrder()">Bestellung senden</button>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
+
+      async function loadProducts() {
+        // Erst Validierung
+        const val = await fetch(`/api/validate-customer?code=${code}`);
+        if (!val.ok)
+          return (document.body.innerHTML = "<h1>Zugriff verweigert!</h1>");
+
+        const res = await fetch("/api/products");
+        const products = await res.json();
+        document.getElementById("product-list").innerHTML = products
+          .map(
+            (p) => `
+                <div class="product">
+                    ${p.image_url ? `<img src="${p.image_url}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 10px;">` : ""}
+                    <span>${p.name} (${p.unit})</span>
+                    <input type="number" id="qty-${p.id}" value="0" min="0">
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      async function submitOrder() {
+        const inputs = document.querySelectorAll("input");
+        const items = [];
+        inputs.forEach((i) => {
+          if (i.value > 0)
+            items.push({
+              product_id: i.id.replace("qty-", ""),
+              quantity: i.value,
+            });
+        });
+
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customer_code: code, items }),
+        });
+        res.ok ? alert("Bestellung gesendet!") : alert("Fehler!");
+      }
+      loadProducts();
+    </script>
+  </body>
+</html>
