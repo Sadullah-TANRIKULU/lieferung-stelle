@@ -5,19 +5,34 @@
     <title>Bestellung erfassen</title>
     <style>
       body {
-        font-family: sans-serif;
-        padding: 40px;
+        font-size: 18px;
+        line-height: 1.6;
+        padding: 15px;
       }
+
       .product {
         display: flex;
         align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 10px;
+        padding: 20px 0; /* Mehr Platz zum Klicken */
+        border-bottom: 2px solid #ddd;
       }
-      input {
-        width: 8rem;
-        margin-left: auto;
+
+      .product img {
+        width: 80px;
+        height: 80px;
+      } /* Größere Bilder */
+
+      input[type="number"] {
+        width: 80px;
+        height: 50px;
+        font-size: 20px; /* Besser lesbar */
+      }
+
+      button {
+        width: 100%;
+        padding: 20px;
+        font-size: 1.2em;
+        margin-top: 20px;
       }
     </style>
   </head>
@@ -28,7 +43,21 @@
 
     <script>
       const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get("code");
+      let code = urlParams.get("code");
+
+      if (code) {
+        localStorage.setItem("customerCode", code); // Code speichern
+      } else {
+        code = localStorage.getItem("customerCode"); // Code aus Speicher holen
+      }
+
+      // 2. Sicherheits-Check: Wenn kein Code da ist, Abbruch
+      if (!code) {
+        document.body.innerHTML =
+          "<h1>Fehler: Kein Kunden-Zugang gefunden.</h1><p>Bitte scannen Sie den QR-Code in der Küche.</p>";
+      } else {
+        loadProducts(); // Wenn Code da ist, Produkte laden
+      }
 
       async function loadProducts() {
         // Erst Validierung
@@ -67,9 +96,17 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ customer_code: code, items }),
         });
-        res.ok ? alert("Bestellung gesendet!") : alert("Fehler!");
       }
-      loadProducts();
+
+      function logout() {
+        localStorage.removeItem("customerCode");
+        // Leite auf eine Seite um, die den QR-Code zeigt
+        window.location.href = "login_info.html";
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProducts();
+      });
     </script>
   </body>
 </html>
