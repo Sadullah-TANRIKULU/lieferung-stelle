@@ -252,21 +252,36 @@
             return;
           }
 
+          // Group by customer_name
+          const grouped = {};
+          data.forEach(item => {
+            if (!grouped[item.customer_name]) {
+              grouped[item.customer_name] = [];
+            }
+            grouped[item.customer_name].push(item);
+          });
+
           loadingList.className = "";
-          loadingList.innerHTML = data
-            .map(
-              (d) => `
-                <div class="customer-card">
-                  <div class="customer-name">👤 ${escapeHtml(d.customer_name)}</div>
-                  <div class="items-grid">
-                    <div class="item-badge">
-                      <div class="item-quantity">${d.total_items || 0}</div>
-                      <div class="item-unit">Einheiten</div>
-                    </div>
+          loadingList.innerHTML = Object.entries(grouped)
+            .map(([customerName, items]) => {
+              const itemsList = items
+                .map(item => `
+                  <div class="item-badge" style="text-align: left; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; border-radius: 8px; border: 1px solid #eee;">
+                    <span style="font-weight: bold; color: #2c001e;">📦 ${escapeHtml(item.product_name)}</span>
+                    <span style="font-weight: bold; color: #e95420; font-size: 18px;">${item.quantity} ${escapeHtml(item.unit || 'Stück')}</span>
+                  </div>
+                `)
+                .join("");
+
+              return `
+                <div class="customer-card" style="margin-bottom: 25px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 20px;">
+                  <div class="customer-name" style="font-size: 20px; font-weight: bold; color: #2c001e; border-bottom: 2px solid #e95420; padding-bottom: 8px; margin-bottom: 15px;">👤 ${escapeHtml(customerName)}</div>
+                  <div class="items-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                    ${itemsList}
                   </div>
                 </div>
-              `,
-            )
+              `;
+            })
             .join("");
 
           updateTimestamp();

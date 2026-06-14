@@ -122,13 +122,13 @@ app.get("/api/products", async (req, res) => {
 app.get("/api/delivery-tour", adminOnly, async (req, res) => {
   try {
     const queryText = `
-      SELECT oi.id, c.name as customer_name, p.name as product_name, oi.quantity, oi.status
+      SELECT oi.id, c.name as customer_name, p.name as product_name, oi.quantity, oi.unit, oi.status
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       JOIN customers c ON o.customer_id = c.id
       JOIN products p ON oi.product_id = p.id
       WHERE o.delivery_date = CURRENT_DATE
-ORDER BY o.created_at DESC;
+      ORDER BY o.created_at DESC;
     `;
     const result = await query(queryText);
     res.json(result.rows);
@@ -166,12 +166,14 @@ app.get("/api/orders-list", adminOnly, async (req, res) => {
 app.get("/api/loading-summary", adminOnly, async (req, res) => {
   try {
     const queryText = `
-      SELECT c.name as customer_name, SUM(oi.quantity) as total_items
+      SELECT c.name as customer_name, p.name as product_name, SUM(oi.quantity) as quantity, oi.unit
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       JOIN customers c ON o.customer_id = c.id
-      GROUP BY c.name
-      ORDER BY c.name;
+      JOIN products p ON oi.product_id = p.id
+      WHERE o.delivery_date = CURRENT_DATE
+      GROUP BY c.name, p.name, oi.unit
+      ORDER BY c.name, p.name;
     `;
     const result = await query(queryText);
     res.json(result.rows);

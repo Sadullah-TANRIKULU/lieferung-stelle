@@ -356,7 +356,7 @@
                     <div class="item ${statusClass}">
                       <div class="customer-name">${escapeHtml(customerName)}</div>
                       <div class="product-info">
-                        📦 <strong>${escapeHtml(item.product_name)}</strong> - ${item.quantity}
+                        📦 <strong>${escapeHtml(item.product_name)}</strong> - ${item.quantity} ${escapeHtml(item.unit || 'Stück')}
                       </div>
                       <div class="status-badge status-${statusClass}">
                         ${statusLabel}
