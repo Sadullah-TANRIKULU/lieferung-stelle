@@ -124,6 +124,63 @@
         box-shadow: 0 0 5px rgba(233, 84, 32, 0.3);
       }
 
+      .add-btn {
+        padding: 15px 20px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .add-btn:hover {
+        background: #218838;
+      }
+
+      .add-btn:active {
+        transform: scale(0.98);
+      }
+
+      .quantity-entries {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .quantity-entry {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      .quantity-entry input,
+      .quantity-entry select {
+        flex: 1;
+        padding: 10px;
+        font-size: 14px;
+        margin: 0;
+      }
+
+      .remove-btn {
+        padding: 8px 12px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .remove-btn:hover {
+        background: #c82333;
+      }
+
       .order-summary {
         background: white;
         padding: 20px;
@@ -371,12 +428,11 @@
                   <div class="product-image-container">
                     ${productImage}
                   </div>
-                  <div class="product-details">
+          <div class="product-details">
                     <div class="product-name">${p.name}</div>
                     <div class="product-inputs">
                       <input 
                         type="number" 
-                        id="qty-${p.id}" 
                         class="product-quantity"
                         value="0" 
                         min="0" 
@@ -386,10 +442,12 @@
                         onchange="updateSummary()"
                         oninput="updateSummary()"
                       >
-                      <select id="unit-${p.id}" class="product-unit" data-product-id="${p.id}" onchange="updateSummary()">
+                      <select class="product-unit" data-product-id="${p.id}" onchange="updateSummary()">
                         ${unitOptions}
                       </select>
+                      <button class="add-btn" onclick="addQuantityEntry(${p.id}, this)">+ Mehr</button>
                     </div>
+                    <div class="quantity-entries" id="entries-${p.id}"></div>
                   </div>
                 </div>
               `;
@@ -412,17 +470,38 @@
         const products = document.querySelectorAll(".product");
 
         products.forEach((p) => {
-          const input = p.querySelector(".product-quantity");
-          const select = p.querySelector(".product-unit");
-          const qty = parseFloat(input.value) || 0;
+          const productId = p.dataset.productId;
+          const productName = p.dataset.productName;
+          
+          // Get main input
+          const mainInput = p.querySelector(".product-quantity");
+          const mainSelect = p.querySelector(".product-unit");
+          const qty = parseFloat(mainInput.value) || 0;
           
           if (qty > 0) {
             items.push({
-              name: p.dataset.productName,
+              name: productName,
               quantity: qty,
-              unit: select.value,
+              unit: mainSelect.value,
             });
           }
+
+          // Get additional entries
+          const entriesContainer = p.querySelector(".quantity-entries");
+          const entryDivs = entriesContainer.querySelectorAll(".quantity-entry");
+          entryDivs.forEach((entryDiv) => {
+            const entryInput = entryDiv.querySelector("input");
+            const entrySelect = entryDiv.querySelector("select");
+            const entryQty = parseFloat(entryInput.value) || 0;
+            
+            if (entryQty > 0) {
+              items.push({
+                name: productName,
+                quantity: entryQty,
+                unit: entrySelect.value,
+              });
+            }
+          });
         });
 
         const summaryContainer = document.getElementById("order-summary");
@@ -445,22 +524,74 @@
         }
       }
 
+      function addQuantityEntry(productId, button) {
+        const product = button.closest(".product");
+        const entriesContainer = product.querySelector(".quantity-entries");
+        const units = product.querySelector(".product-unit").innerHTML;
+        
+        const entryHtml = `
+          <div class="quantity-entry">
+            <input 
+              type="number" 
+              value="0" 
+              min="0" 
+              step="0.1"
+              placeholder="Menge"
+              onchange="updateSummary()"
+              oninput="updateSummary()"
+            >
+            <select onchange="updateSummary()">
+              ${units}
+            </select>
+            <button class="remove-btn" onclick="removeQuantityEntry(this)">×</button>
+          </div>
+        `;
+        
+        entriesContainer.insertAdjacentHTML("beforeend", entryHtml);
+        updateSummary();
+      }
+
+      function removeQuantityEntry(button) {
+        button.closest(".quantity-entry").remove();
+        updateSummary();
+      }
+
       async function submitOrder() {
         const items = [];
         const products = document.querySelectorAll(".product");
 
         products.forEach((p) => {
-          const input = p.querySelector(".product-quantity");
-          const select = p.querySelector(".product-unit");
-          const qty = parseFloat(input.value) || 0;
+          const productId = parseInt(p.dataset.productId);
+          
+          // Get main input
+          const mainInput = p.querySelector(".product-quantity");
+          const mainSelect = p.querySelector(".product-unit");
+          const qty = parseFloat(mainInput.value) || 0;
           
           if (qty > 0) {
             items.push({
-              product_id: parseInt(input.dataset.productId),
+              product_id: productId,
               quantity: qty,
-              unit: select.value,
+              unit: mainSelect.value,
             });
           }
+
+          // Get additional entries
+          const entriesContainer = p.querySelector(".quantity-entries");
+          const entryDivs = entriesContainer.querySelectorAll(".quantity-entry");
+          entryDivs.forEach((entryDiv) => {
+            const entryInput = entryDiv.querySelector("input");
+            const entrySelect = entryDiv.querySelector("select");
+            const entryQty = parseFloat(entryInput.value) || 0;
+            
+            if (entryQty > 0) {
+              items.push({
+                product_id: productId,
+                quantity: entryQty,
+                unit: entrySelect.value,
+              });
+            }
+          });
         });
 
         if (items.length === 0) {
@@ -480,6 +611,7 @@
             alert(`✅ Bestellung #${data.orderId} erfolgreich gespeichert!`);
             // Reset form
             document.querySelectorAll(".product-quantity").forEach(input => input.value = "0");
+            document.querySelectorAll(".quantity-entries").forEach(container => container.innerHTML = "");
             updateSummary();
           } else {
             const error = await res.text();
