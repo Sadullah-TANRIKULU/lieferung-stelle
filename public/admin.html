@@ -756,7 +756,7 @@
                 <td>${escapeHtml(order.customer_name)}</td>
                 <td><span class="customer-code">${order.customer_code}</span></td>
                 <td>${escapeHtml(order.product_name)}</td>
-                <td>${order.quantity}</td>
+                <td>${order.quantity} ${escapeHtml(order.unit || 'Stück')}</td>
                 <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
                 <td>${deliveryDate}</td>
                 <td>${createdDate}</td>

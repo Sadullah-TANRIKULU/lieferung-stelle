@@ -70,8 +70,8 @@ app.post("/api/orders", async (req, res) => {
       
       // Check if order_items has a unit column, if not store in quantity as string representation
       await query(
-        "INSERT INTO order_items (order_id, product_id, quantity, status) VALUES ($1, $2, $3, $4)",
-        [orderId, parseInt(item.product_id), quantity, "open"],
+        "INSERT INTO order_items (order_id, product_id, quantity, unit, status) VALUES ($1, $2, $3, $4, $5)",
+        [orderId, parseInt(item.product_id), quantity, unit, "open"],
       );
     }
 
@@ -85,10 +85,10 @@ app.post("/api/orders", async (req, res) => {
 app.get("/api/daily-shopping-list", adminOnly, async (req, res) => {
   try {
     const queryText = `
-      SELECT p.name, p.unit, SUM(oi.quantity) as total_needed
+      SELECT p.name, oi.unit, SUM(oi.quantity) as total_needed
       FROM order_items oi
       JOIN products p ON oi.product_id = p.id
-      GROUP BY p.name, p.unit;
+      GROUP BY p.name, oi.unit;
     `;
     const result = await query(queryText);
     res.json(result.rows);
@@ -147,6 +147,7 @@ app.get("/api/orders-list", adminOnly, async (req, res) => {
         c.customer_code,
         p.name as product_name,
         oi.quantity,
+        oi.unit,
         oi.status,
         o.delivery_date,
         o.created_at
