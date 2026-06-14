@@ -352,7 +352,7 @@
     <!-- PRODUCTS TAB -->
     <div id="products" class="tab-content active">
       <div class="container">
-        <h1>🏭 Neues Produkt</h1>
+        <h1 id="productFormTitle">🏭 Neues Produkt</h1>
 
         <div class="form-group">
           <label for="prodName">Produktname</label>
@@ -360,7 +360,7 @@
             id="prodName" 
             type="text"
             placeholder="z.B. Kartoffeln, Äpfel, Salat..." 
-            onkeypress="if(event.key==='Enter') addProduct()"
+            onkeypress="if(event.key==='Enter') saveProduct()"
           />
         </div>
 
@@ -395,7 +395,10 @@
 
         <div id="message" class="message"></div>
 
-        <button onclick="addProduct()">✅ Produkt speichern</button>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button id="btnSaveProduct" onclick="saveProduct()" style="margin-top: 0; flex: 1;">✅ Produkt speichern</button>
+          <button id="btnCancelProductEdit" onclick="cancelProductEdit()" style="display: none; margin-top: 0; background: #2c001e; flex: 1;">❌ Abbrechen</button>
+        </div>
       </div>
 
       <div class="container" style="margin-top: 20px;">
@@ -423,7 +426,7 @@
     <!-- CUSTOMERS TAB -->
     <div id="customers" class="tab-content">
       <div class="container">
-        <h1>👥 Neuer Kunde</h1>
+        <h1 id="customerFormTitle">👥 Neuer Kunde</h1>
         
         <div class="form-group">
           <label for="custName">Kundenname</label>
@@ -431,7 +434,7 @@
             id="custName" 
             type="text"
             placeholder="z.B. Bäckerei Müller, Familie Schmidt..." 
-            onkeypress="if(event.key==='Enter') addCustomer()"
+            onkeypress="if(event.key==='Enter') saveCustomer()"
           />
         </div>
 
@@ -441,7 +444,7 @@
             id="custCode" 
             type="text"
             placeholder="z.B. MUE-01, SCH-02..." 
-            onkeypress="if(event.key==='Enter') addCustomer()"
+            onkeypress="if(event.key==='Enter') saveCustomer()"
           />
         </div>
 
@@ -451,12 +454,15 @@
             id="custAddress" 
             type="text"
             placeholder="z.B. Hauptstraße 12, 12345 Berlin..." 
-            onkeypress="if(event.key==='Enter') addCustomer()"
+            onkeypress="if(event.key==='Enter') saveCustomer()"
           />
         </div>
         
         <div id="cust-message" class="message"></div>
-        <button onclick="addCustomer()">✅ Kunde speichern</button>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button id="btnSaveCustomer" onclick="saveCustomer()" style="margin-top: 0; flex: 1;">✅ Kunde speichern</button>
+          <button id="btnCancelCustomerEdit" onclick="cancelCustomerEdit()" style="display: none; margin-top: 0; background: #2c001e; flex: 1;">❌ Abbrechen</button>
+        </div>
       </div>
 
       <div class="container" style="margin-top: 20px;">
@@ -570,7 +576,9 @@
         };
       });
 
-      async function addProduct() {
+      let editProductId = null;
+
+      async function saveProduct() {
         const name = document.getElementById("prodName").value.trim();
         const unit = document.getElementById("prodUnit").value;
         const image_url = document.getElementById("prodImage").value.trim();
@@ -583,11 +591,13 @@
         }
 
         const image_url_full = image_url ? "assets/" + image_url : null;
-
         const adminKey = localStorage.getItem("adminKey") || "";
+        const url = editProductId !== null ? `/api/products/${editProductId}` : "/api/products";
+        const method = editProductId !== null ? "PATCH" : "POST";
+
         try {
-          const res = await fetch("/api/products", {
-            method: "POST",
+          const res = await fetch(url, {
+            method: method,
             headers: {
               "Content-Type": "application/json",
               "x-admin-key": adminKey,
@@ -602,10 +612,12 @@
           }
 
           if (res.ok) {
-            showMessage("✅ Produkt erfolgreich gespeichert!", "success");
-            document.getElementById("prodName").value = "";
-            document.getElementById("prodImage").value = "";
-            document.getElementById("previewImg").style.display = "none";
+            const successMsg = editProductId !== null 
+              ? "✅ Produkt erfolgreich aktualisiert!" 
+              : "✅ Produkt erfolgreich gespeichert!";
+            showMessage(successMsg, "success");
+            
+            cancelProductEdit();
             loadProducts();
             
             setTimeout(() => {
@@ -625,6 +637,68 @@
         const messageEl = document.getElementById("message");
         messageEl.textContent = text;
         messageEl.className = `message ${type}`;
+      }
+
+      function startEditProduct(id, name, unit, imageUrl) {
+        editProductId = id;
+        document.getElementById("prodName").value = name;
+        
+        const selectEl = document.getElementById("prodImage");
+        let filename = "";
+        if (imageUrl && imageUrl.startsWith("assets/")) {
+          filename = imageUrl.substring("assets/".length);
+        } else if (imageUrl) {
+          filename = imageUrl;
+        }
+        selectEl.value = filename;
+        
+        const event = new Event('change');
+        selectEl.dispatchEvent(event);
+
+        const unitSelect = document.getElementById("prodUnit");
+        let found = false;
+        for (let i = 0; i < unitSelect.options.length; i++) {
+          if (unitSelect.options[i].value === unit) {
+            unitSelect.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const opt = document.createElement("option");
+          opt.value = unit;
+          opt.textContent = unit;
+          unitSelect.appendChild(opt);
+          unitSelect.value = unit;
+        }
+
+        document.getElementById("productFormTitle").textContent = "✏️ Produkt bearbeiten";
+        document.getElementById("btnSaveProduct").textContent = "💾 Änderungen speichern";
+        document.getElementById("btnCancelProductEdit").style.display = "block";
+        
+        document.getElementById("prodName").scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function cancelProductEdit() {
+        editProductId = null;
+        document.getElementById("prodName").value = "";
+        document.getElementById("prodUnit").selectedIndex = 0;
+        
+        const unitSelect = document.getElementById("prodUnit");
+        while (unitSelect.options.length > 9) {
+          unitSelect.remove(9);
+        }
+        
+        document.getElementById("prodImage").value = "";
+        document.getElementById("previewImg").style.display = "none";
+        document.getElementById("productFormTitle").textContent = "🏭 Neues Produkt";
+        document.getElementById("btnSaveProduct").textContent = "✅ Produkt speichern";
+        document.getElementById("btnCancelProductEdit").style.display = "none";
+      }
+
+      function escapeJS(str) {
+        if (!str) return '';
+        return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
       }
 
       // ===== PRODUCTS LIST =====
@@ -654,6 +728,7 @@
                   <th style="width: 120px;">Bild</th>
                   <th>Produktname</th>
                   <th>Einheit</th>
+                  <th style="width: 120px;">Aktion</th>
                 </tr>
               </thead>
               <tbody>
@@ -670,6 +745,9 @@
                 <td>${imgHtml}</td>
                 <td><strong>${escapeHtml(product.name)}</strong></td>
                 <td><span class="customer-code">${escapeHtml(product.unit)}</span></td>
+                <td>
+                  <button onclick="startEditProduct(${product.id}, '${escapeJS(product.name)}', '${escapeJS(product.unit)}', '${escapeJS(product.image_url || '')}')" style="margin-top: 0; padding: 6px 10px; font-size: 12px; width: auto; background: #e95420;">✏️ Bearbeiten</button>
+                </td>
               </tr>
             `;
           });
@@ -854,6 +932,7 @@
                   <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <a href="${customerUrl}" target="_blank" style="color: #e95420; text-decoration: none; font-weight: bold;">Öffnen ↗</a>
                     <button onclick="showQrCode('${escapeHtml(cust.name)}', '${cust.customer_code}')" style="margin-top: 0; padding: 8px 12px; font-size: 12px; width: auto; background: #e95420;">📱 QR-Code</button>
+                    <button onclick="startEditCustomer(${cust.id}, '${escapeJS(cust.name)}', '${escapeJS(cust.customer_code)}', '${escapeJS(cust.address || '')}')" style="margin-top: 0; padding: 8px 12px; font-size: 12px; width: auto; background: #e95420;">✏️ Bearbeiten</button>
                   </div>
                 </td>
               </tr>
@@ -877,7 +956,9 @@
         }
       }
 
-      async function addCustomer() {
+      let editCustomerId = null;
+
+      async function saveCustomer() {
         const name = document.getElementById("custName").value.trim();
         const customer_code = document.getElementById("custCode").value.trim();
         const address = document.getElementById("custAddress").value.trim();
@@ -889,9 +970,12 @@
         }
 
         const adminKey = localStorage.getItem("adminKey") || "";
+        const url = editCustomerId !== null ? `/api/customers/${editCustomerId}` : "/api/customers";
+        const method = editCustomerId !== null ? "PATCH" : "POST";
+
         try {
-          const res = await fetch("/api/customers", {
-            method: "POST",
+          const res = await fetch(url, {
+            method: method,
             headers: {
               "Content-Type": "application/json",
               "x-admin-key": adminKey,
@@ -906,10 +990,12 @@
           }
 
           if (res.ok) {
-            showCustomerMessage("✅ Kunde erfolgreich angelegt!", "success");
-            document.getElementById("custName").value = "";
-            document.getElementById("custCode").value = "";
-            document.getElementById("custAddress").value = "";
+            const successMsg = editCustomerId !== null 
+              ? "✅ Kunde erfolgreich aktualisiert!" 
+              : "✅ Kunde erfolgreich angelegt!";
+            showCustomerMessage(successMsg, "success");
+            
+            cancelCustomerEdit();
             loadCustomers();
 
             setTimeout(() => {
@@ -930,6 +1016,30 @@
         messageEl.textContent = text;
         messageEl.className = `message ${type}`;
         messageEl.style.display = "block";
+      }
+
+      function startEditCustomer(id, name, customer_code, address) {
+        editCustomerId = id;
+        document.getElementById("custName").value = name;
+        document.getElementById("custCode").value = customer_code;
+        document.getElementById("custAddress").value = address || "";
+
+        document.getElementById("customerFormTitle").textContent = "✏️ Kunde bearbeiten";
+        document.getElementById("btnSaveCustomer").textContent = "💾 Änderungen speichern";
+        document.getElementById("btnCancelCustomerEdit").style.display = "block";
+        
+        document.getElementById("custName").scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function cancelCustomerEdit() {
+        editCustomerId = null;
+        document.getElementById("custName").value = "";
+        document.getElementById("custCode").value = "";
+        document.getElementById("custAddress").value = "";
+
+        document.getElementById("customerFormTitle").textContent = "👥 Neuer Kunde";
+        document.getElementById("btnSaveCustomer").textContent = "✅ Kunde speichern";
+        document.getElementById("btnCancelCustomerEdit").style.display = "none";
       }
 
       function showQrCode(name, code) {

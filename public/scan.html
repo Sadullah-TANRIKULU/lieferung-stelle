@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zugang benötigt - QR-Code Scan</title>
+    <title>Lieferung Stelle - Portal</title>
     <style>
         * {
             margin: 0;
@@ -36,86 +36,29 @@
 
         h1 {
             font-size: 32px;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
             color: #e95420;
         }
 
         p {
-            font-size: 18px;
+            font-size: 16px;
             opacity: 0.9;
-            margin-bottom: 30px;
             line-height: 1.6;
         }
 
-        .qr-code-container {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin: 30px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .qr-code-container img {
-            width: 240px;
-            height: 240px;
-            border-radius: 10px;
-        }
-
-        .info {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
+        .section-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 12px;
             margin: 20px 0;
             border-left: 4px solid #e95420;
             text-align: left;
-            font-size: 14px;
         }
 
-        .info h3 {
+        .section-box h3 {
             color: #e95420;
             margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .info ul {
-            margin-left: 20px;
-            line-height: 1.8;
-        }
-
-        .info li {
-            margin-bottom: 5px;
-        }
-
-        .back-link {
-            display: inline-block;
-            color: #e95420;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 20px;
-            padding: 10px 20px;
-            border: 2px solid #e95420;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-            background: #e95420;
-            color: white;
-        }
-
-        .admin-section {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .admin-section p {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-bottom: 15px;
+            font-size: 18px;
         }
 
         .admin-btn {
@@ -127,67 +70,35 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            width: 100%;
             transition: all 0.3s ease;
+            margin-top: 10px;
         }
 
         .admin-btn:hover {
             background: #e95420;
             color: white;
         }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 25px;
-            }
-
-            h1 {
-                font-size: 26px;
-            }
-
-            p {
-                font-size: 16px;
-            }
-
-            .qr-code-container img {
-                width: 200px;
-                height: 200px;
-            }
-
-            .info {
-                padding: 15px;
-                font-size: 13px;
-            }
-
-            .info ul {
-                margin-left: 15px;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📱 Zugang erforderlich</h1>
-        <p>Scannen Sie Ihren persönlichen QR-Code, um auf das System zuzugreifen</p>
-
-        <div class="qr-code-container">
-            <img src="assets/qr-code.png" alt="QR-Code zum Scannen" onerror="this.style.display='none'">
+        <h1>🌾 Lieferung Stelle</h1>
+        
+        <div class="section-box">
+            <h3>🛒 Kunden-Bestellungen</h3>
+            <p>
+                Bestellungen können nur über Ihren **persönlichen Bestell-Link** oder durch Scannen Ihres **gedruckten QR-Codes** erfasst werden.
+            </p>
+            <p style="margin-top: 10px; font-weight: bold; font-size: 14px; color: #ffbc99;">
+                💡 Bitte fordern Sie bei Ihrem Anbieter einen neuen Bestell-Link oder QR-Code an, falls Sie keinen haben.
+            </p>
         </div>
 
-        <div class="info">
-            <h3>📖 Verwendung:</h3>
-            <ul>
-                <li>Scannen Sie den QR-Code mit Ihrer Kamera oder einem QR-Reader</li>
-                <li>Sie werden automatisch zur Bestellung weitergeleitet</li>
-                <li>Geben Sie die gewünschten Mengen ein</li>
-                <li>Bestätigen Sie Ihre Bestellung</li>
-            </ul>
-        </div>
-
-        <a href="bestellung.html" class="back-link">🔄 Zurück zum Bestellsystem</a>
-
-        <div class="admin-section">
-            <p>🔐 Sind Sie Administrator?</p>
-            <button class="admin-btn" onclick="loginAsAdmin()">Admin-Zugang</button>
+        <div class="section-box" style="border-left-color: #5e2750;">
+            <h3>🔐 Logistik-Mitarbeiter</h3>
+            <p>Sind Sie Fahrer oder Administrator? Melden Sie sich hier an, um zum Dashboard zu gelangen.</p>
+            <button class="admin-btn" onclick="loginAsAdmin()">Admin & Fahrer Login</button>
         </div>
     </div>
 

@@ -199,6 +199,29 @@ app.post("/api/products", adminOnly, async (req, res) => {
   }
 });
 
+// Produkt bearbeiten
+app.patch("/api/products/:id", adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { name, unit, image_url } = req.body;
+  if (!name || !unit) {
+    return res.status(400).json({ error: "Name und Einheit sind Pflichtfelder!" });
+  }
+
+  try {
+    const result = await query(
+      "UPDATE products SET name = $1, unit = $2, image_url = $3 WHERE id = $4 RETURNING *;",
+      [name, unit, image_url, parseInt(id as string)]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Produkt nicht gefunden" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Fehler beim Aktualisieren des Produkts:", err);
+    res.status(500).json({ error: "Fehler beim Aktualisieren des Produkts" });
+  }
+});
+
 // Assets abrufen (Bilder auflisten)
 app.get("/api/assets", adminOnly, (req, res) => {
   const assetsDir = path.join(__dirname, "..", "public", "assets");
@@ -251,6 +274,32 @@ app.post("/api/customers", adminOnly, async (req, res) => {
       return res.status(400).json({ error: "Dieser Kundencode existiert bereits!" });
     }
     res.status(500).json({ error: "Fehler beim Erstellen des Kunden" });
+  }
+});
+
+// Kunde bearbeiten
+app.patch("/api/customers/:id", adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { name, customer_code, address } = req.body;
+  if (!name || !customer_code) {
+    return res.status(400).json({ error: "Name und Kundencode sind Pflichtfelder!" });
+  }
+
+  try {
+    const result = await query(
+      "UPDATE customers SET name = $1, customer_code = $2, address = $3 WHERE id = $4 RETURNING *;",
+      [name, customer_code.trim(), address ? address.trim() : null, parseInt(id as string)]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Kunde nicht gefunden" });
+    }
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    console.error("Fehler beim Aktualisieren des Kunden:", err);
+    if (err.code === "23505") {
+      return res.status(400).json({ error: "Dieser Kundencode existiert bereits!" });
+    }
+    res.status(500).json({ error: "Fehler beim Aktualisieren des Kunden" });
   }
 });
 
