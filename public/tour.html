@@ -364,12 +364,17 @@
                       ${
                         statusClass === "open"
                           ? `
+                        <div style="margin-top: 10px; margin-bottom: 10px;">
+                          <input type="text" id="note-${item.id}" placeholder="Notiz hinzufügen (optional)..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px;" />
+                        </div>
                         <div class="buttons">
                           <button class="btn-delivered" onclick="updateStatus(${item.id}, 'delivered')">✅ Geliefert</button>
                           <button class="btn-refused" onclick="updateStatus(${item.id}, 'refused')">❌ Ablehnen</button>
                         </div>
                       `
-                          : ""
+                          : `
+                        ${item.driver_note ? `<div style="font-size: 14px; color: #2c001e; background: rgba(233, 84, 32, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border-left: 4px solid #e95420; text-align: left;">📝 <strong>Fahrer-Notiz:</strong> ${escapeHtml(item.driver_note)}</div>` : ''}
+                      `
                       }
                     </div>
                   `;
@@ -392,6 +397,8 @@
 
       async function updateStatus(itemId, newStatus) {
         const adminKey = localStorage.getItem("adminKey") || "";
+        const noteInput = document.getElementById(`note-${itemId}`);
+        const driver_note = noteInput ? noteInput.value.trim() : "";
 
         try {
           const res = await fetch(`/api/update-status/${itemId}`, {
@@ -400,7 +407,7 @@
               "Content-Type": "application/json",
               "x-admin-key": adminKey,
             },
-            body: JSON.stringify({ status: newStatus }),
+            body: JSON.stringify({ status: newStatus, driver_note: driver_note }),
           });
 
           if (res.status === 403) {

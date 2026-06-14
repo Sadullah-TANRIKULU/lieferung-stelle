@@ -731,6 +731,7 @@
                   <th>Produkt</th>
                   <th>Menge</th>
                   <th>Status</th>
+                  <th>Notiz</th>
                   <th>Lieferdatum</th>
                   <th>Erstellt</th>
                 </tr>
@@ -758,6 +759,7 @@
                 <td>${escapeHtml(order.product_name)}</td>
                 <td>${order.quantity} ${escapeHtml(order.unit || 'Stück')}</td>
                 <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                <td>${order.driver_note ? `<span style="font-size: 13px; font-style: italic; color: #333; background: #f0f0f0; padding: 4px 8px; border-radius: 4px; border-left: 3px solid #e95420; display: inline-block;">${escapeHtml(order.driver_note)}</span>` : '<em style="color: #bbb; font-size: 12px;">Keine Notiz</em>'}</td>
                 <td>${deliveryDate}</td>
                 <td>${createdDate}</td>
               </tr>

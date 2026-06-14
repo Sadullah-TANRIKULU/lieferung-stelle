@@ -99,11 +99,12 @@ app.get("/api/daily-shopping-list", adminOnly, async (req, res) => {
 
 app.patch("/api/update-status/:item_id", adminOnly, async (req, res) => {
   const { item_id } = req.params;
-  const { status } = req.body; // Erwartet 'delivered' oder 'refused'
+  const { status, driver_note } = req.body; // Erwartet 'delivered' oder 'refused' und optionalen driver_note
 
   try {
-    await query("UPDATE order_items SET status = $1 WHERE id = $2", [
+    await query("UPDATE order_items SET status = $1, driver_note = $2 WHERE id = $3", [
       status,
+      driver_note ? driver_note.trim() : null,
       item_id,
     ]);
     res.json({ message: "Status aktualisiert" });
@@ -122,7 +123,7 @@ app.get("/api/products", async (req, res) => {
 app.get("/api/delivery-tour", adminOnly, async (req, res) => {
   try {
     const queryText = `
-      SELECT oi.id, c.name as customer_name, p.name as product_name, oi.quantity, oi.unit, oi.status
+      SELECT oi.id, c.name as customer_name, p.name as product_name, oi.quantity, oi.unit, oi.status, oi.driver_note
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       JOIN customers c ON o.customer_id = c.id
@@ -149,6 +150,7 @@ app.get("/api/orders-list", adminOnly, async (req, res) => {
         oi.quantity,
         oi.unit,
         oi.status,
+        oi.driver_note,
         o.delivery_date,
         o.created_at
       FROM order_items oi
