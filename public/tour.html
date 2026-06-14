@@ -5,66 +5,431 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fahrer-Tour</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: sans-serif;
+        font-family: Ubuntu, sans-serif;
         padding: 15px;
+        background-color: #f4f4f4;
+        max-width: 1200px;
+        margin: 0 auto;
       }
-      .item {
-        border: 1px solid #ddd;
-        padding: 10px;
+
+      .header {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        font-size: 28px;
+        color: #2c001e;
         margin-bottom: 10px;
-        border-radius: 5px;
       }
-      .delivered {
+
+      .header p {
+        font-size: 16px;
+        color: #666;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .stat-box {
+        background: #f0f0f0;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #e95420;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .item {
+        border: 2px solid #ddd;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .item.delivered {
         background-color: #d4edda;
+        border-color: #28a745;
       }
-      .refused {
+
+      .item.refused {
         background-color: #f8d7da;
+        border-color: #dc3545;
       }
+
+      .customer-name {
+        font-size: 22px;
+        font-weight: bold;
+        color: #2c001e;
+        margin-bottom: 10px;
+      }
+
+      .product-info {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: #555;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+
+      .status-open {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .status-delivered {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .status-refused {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
       button {
-        padding: 10px;
-        margin-right: 5px;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
         cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .btn-delivered {
+        background: #28a745;
+        color: white;
+      }
+
+      .btn-delivered:hover {
+        background: #218838;
+      }
+
+      .btn-refused {
+        background: #dc3545;
+        color: white;
+      }
+
+      .btn-refused:hover {
+        background: #c82333;
+      }
+
+      .tour-list {
+        min-height: 100px;
+      }
+
+      .loading-text,
+      .error-message {
+        text-align: center;
+        padding: 40px;
+        font-size: 18px;
+      }
+
+      .loading-text {
+        color: #666;
+      }
+
+      .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        border-radius: 8px;
+        border-left: 4px solid #f5c6cb;
+      }
+
+      .buttons-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      .refresh-btn {
+        background: #e95420;
+        color: white;
+        padding: 16px;
+      }
+
+      .refresh-btn:hover {
+        background: #d63f1b;
+      }
+
+      .logout-btn {
+        background: #5e2750;
+        color: white;
+        padding: 16px;
+      }
+
+      .logout-btn:hover {
+        background: #3d1a36;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .customer-name {
+          font-size: 20px;
+        }
+
+        .stats {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .buttons {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 8px;
+        }
+
+        .header {
+          padding: 15px;
+        }
+
+        .header h1 {
+          font-size: 22px;
+        }
+
+        .item {
+          padding: 15px;
+        }
+
+        .customer-name {
+          font-size: 18px;
+        }
+
+        .product-info {
+          font-size: 16px;
+        }
+
+        button {
+          padding: 12px;
+          font-size: 14px;
+        }
+
+        .buttons-container {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Tour für heute</h1>
-    <div id="tour-list">Lade Tour...</div>
+    <div class="header">
+      <h1>📍 Heute Auslieferung</h1>
+      <p>Verwaltung der Lieferroute und Bestätigungen</p>
+      <div class="stats" id="stats">
+        <div class="stat-box">
+          <div class="stat-number">0</div>
+          <div class="stat-label">Offen</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">0</div>
+          <div class="stat-label">Geliefert</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">0</div>
+          <div class="stat-label">Abgelehnt</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tour-list" id="tour-list">
+      <div class="loading-text">⏳ Route wird geladen...</div>
+    </div>
+
+    <div class="buttons-container">
+      <button class="refresh-btn" onclick="loadTour()">🔄 Aktualisieren</button>
+      <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
+    </div>
 
     <script>
-      async function loadTour() {
-        const res = await fetch("/api/delivery-tour", {
-          headers: { "x-admin-key": "ich-liebe-naime" }, 
-        });
-        const items = await res.json();
-        const container = document.getElementById("tour-list");
+      // Security check
+      if (localStorage.getItem("isAdmin") !== "true") {
+        window.location.href = "index.html";
+      }
 
-        container.innerHTML = items
-          .map(
-            (item) => `
-                <div class="item ${item.status === "delivered" ? "delivered" : item.status === "refused" ? "refused" : ""}">
-                    <strong>${item.customer_name}</strong><br>
-                    ${item.product_name} (${item.quantity})<br>
-                    Status: <b>${item.status}</b><br>
-                    <button onclick="updateStatus(${item.id}, 'delivered')">✅ Geliefert</button>
-                    <button onclick="updateStatus(${item.id}, 'refused')">❌ Ablehnen</button>
-                </div>
-            `,
-          )
-          .join("");
+      async function loadTour() {
+        const tourList = document.getElementById("tour-list");
+        tourList.innerHTML = '<div class="loading-text">⏳ Route wird geladen...</div>';
+
+        try {
+          const res = await fetch("/api/delivery-tour", {
+            headers: { "x-admin-key": "ich-liebe-naime" },
+          });
+
+          if (!res.ok) {
+            throw new Error("Fehler beim Laden der Tour");
+          }
+
+          const items = await res.json();
+
+          if (!items || items.length === 0) {
+            tourList.innerHTML = '<div class="loading-text">📭 Keine Lieferungen für heute</div>';
+            updateStats([], items);
+            return;
+          }
+
+          // Group by customer
+          const grouped = {};
+          items.forEach((item) => {
+            if (!grouped[item.customer_name]) {
+              grouped[item.customer_name] = [];
+            }
+            grouped[item.customer_name].push(item);
+          });
+
+          tourList.innerHTML = Object.entries(grouped)
+            .map(([customerName, customerItems]) => {
+              return customerItems
+                .map((item) => {
+                  const statusClass = item.status || "open";
+                  const statusLabel =
+                    statusClass === "delivered"
+                      ? "✅ Geliefert"
+                      : statusClass === "refused"
+                        ? "❌ Abgelehnt"
+                        : "⏳ Offen";
+
+                  return `
+                    <div class="item ${statusClass}">
+                      <div class="customer-name">${escapeHtml(customerName)}</div>
+                      <div class="product-info">
+                        📦 <strong>${escapeHtml(item.product_name)}</strong> - ${item.quantity}
+                      </div>
+                      <div class="status-badge status-${statusClass}">
+                        ${statusLabel}
+                      </div>
+                      ${
+                        statusClass === "open"
+                          ? `
+                        <div class="buttons">
+                          <button class="btn-delivered" onclick="updateStatus(${item.id}, 'delivered')">✅ Geliefert</button>
+                          <button class="btn-refused" onclick="updateStatus(${item.id}, 'refused')">❌ Ablehnen</button>
+                        </div>
+                      `
+                          : ""
+                      }
+                    </div>
+                  `;
+                })
+                .join("");
+            })
+            .join("");
+
+          updateStats(items, items);
+        } catch (error) {
+          console.error("Fehler:", error);
+          tourList.innerHTML = `
+            <div class="error-message">
+              ❌ Fehler beim Laden: ${escapeHtml(error.message)}<br>
+              <small>Bitte aktualisieren Sie die Seite oder versuchen Sie es später erneut.</small>
+            </div>
+          `;
+        }
       }
 
       async function updateStatus(itemId, newStatus) {
-        await fetch(`/api/update-status/${itemId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", "x-admin-key": "ich-liebe-naime" },
-          body: JSON.stringify({ status: newStatus }),
-        });
-        loadTour(); // Automatischer Refresh der Liste
+        try {
+          const res = await fetch(`/api/update-status/${itemId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-key": "ich-liebe-naime",
+            },
+            body: JSON.stringify({ status: newStatus }),
+          });
+
+          if (res.ok) {
+            await loadTour(); // Refresh the list
+          } else {
+            alert("❌ Fehler beim Aktualisieren des Status");
+          }
+        } catch (err) {
+          console.error("Fehler:", err);
+          alert("❌ Fehler beim Aktualisieren des Status");
+        }
       }
 
+      function updateStats(allItems, items) {
+        const openCount = items.filter((i) => (i.status || "open") === "open").length;
+        const deliveredCount = items.filter((i) => i.status === "delivered").length;
+        const refusedCount = items.filter((i) => i.status === "refused").length;
+
+        const stats = document.querySelectorAll(".stat-number");
+        stats[0].textContent = openCount;
+        stats[1].textContent = deliveredCount;
+        stats[2].textContent = refusedCount;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function logout() {
+        localStorage.removeItem("isAdmin");
+        window.location.href = "scan.html";
+      }
+
+      // Load on page load
       loadTour();
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadTour, 30000);
     </script>
   </body>
 </html>

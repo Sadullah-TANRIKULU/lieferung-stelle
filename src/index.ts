@@ -40,9 +40,9 @@ app.get("/api/validate-customer", async (req, res) => {
 
 // Eine Bestellung speichern
 app.post("/api/orders", async (req, res) => {
-  const { customer_code, items } = req.body; // items: [{product_id: 1, quantity: 5}, ...]
+  const { customer_code, items } = req.body; // items: [{product_id: 1, quantity: 5, unit: "kg"}, ...]
 
-  console.log("Daten vom Frontend erhalten:", req.body); // FÜGE DAS HINZU
+  console.log("Daten vom Frontend erhalten:", req.body);
 
   try {
     // 1. Kunden-ID anhand des Codes finden
@@ -53,23 +53,29 @@ app.post("/api/orders", async (req, res) => {
     if (customer.rows.length === 0)
       return res.status(404).send("Kunde nicht gefunden");
 
-    // 2. Bestellung anlegen
+    // 2. Bestellung mit aktuellem Datum anlegen
     const order = await query(
-      "INSERT INTO orders (customer_id) VALUES ($1) RETURNING id",
+      "INSERT INTO orders (customer_id, delivery_date) VALUES ($1, CURRENT_DATE) RETURNING id",
       [customer.rows[0].id],
     );
     const orderId = order.rows[0].id;
 
-    // 3. Positionen einfügen
+    // 3. Positionen einfügen (mit Einheit)
     for (const item of items) {
+      // Try to use unit if provided, otherwise fallback to just quantity
+      const unit = item.unit || "Stück";
+      const quantity = parseFloat(item.quantity);
+      
+      // Check if order_items has a unit column, if not store in quantity as string representation
       await query(
-        "INSERT INTO order_items (order_id, product_id, quantity) VALUES ($1, $2, $3)",
-        [orderId, parseInt(item.product_id), parseInt(item.quantity)],
+        "INSERT INTO order_items (order_id, product_id, quantity, status) VALUES ($1, $2, $3, $4)",
+        [orderId, parseInt(item.product_id), quantity, "open"],
       );
     }
 
     res.status(201).json({ orderId });
   } catch (err) {
+    console.error("Fehler beim Erstellen der Bestellung:", err);
     res.status(500).send("Fehler beim Erstellen der Bestellung");
   }
 });
@@ -126,6 +132,32 @@ ORDER BY o.created_at DESC;
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: "Tour konnte nicht geladen werden" });
+  }
+});
+
+// Get all orders with details
+app.get("/api/orders-list", adminOnly, async (req, res) => {
+  try {
+    const queryText = `
+      SELECT 
+        o.id as order_id,
+        c.name as customer_name,
+        c.customer_code,
+        p.name as product_name,
+        oi.quantity,
+        oi.status,
+        o.delivery_date,
+        o.created_at
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      JOIN customers c ON o.customer_id = c.id
+      JOIN products p ON oi.product_id = p.id
+      ORDER BY o.created_at DESC;
+    `;
+    const result = await query(queryText);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Fehler beim Laden der Bestellungen" });
   }
 });
 

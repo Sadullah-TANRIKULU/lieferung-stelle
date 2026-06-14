@@ -2,40 +2,302 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lade-Übersicht</title>
     <style>
-      body {
-        font-family: sans-serif;
-        padding: 20px;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-      .customer-card {
+
+      body {
+        font-family: Ubuntu, sans-serif;
         padding: 15px;
-        border-bottom: 2px solid #333;
-        font-size: 1.2em;
+        background-color: #f4f4f4;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        font-size: 28px;
+        color: #2c001e;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 16px;
+        color: #666;
+      }
+
+      .timestamp {
+        font-size: 14px;
+        color: #999;
+        margin-top: 10px;
+      }
+
+      .customer-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #e95420;
+      }
+
+      .customer-name {
+        font-size: 22px;
+        font-weight: bold;
+        color: #2c001e;
+        margin-bottom: 15px;
+      }
+
+      .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+      }
+
+      .item-badge {
+        background: #f0f0f0;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        text-align: center;
+      }
+
+      .item-quantity {
+        font-size: 24px;
+        font-weight: bold;
+        color: #e95420;
+        margin-bottom: 5px;
+      }
+
+      .item-unit {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .loading-list {
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .loading-text {
+        font-size: 18px;
+        color: #666;
+        text-align: center;
+      }
+
+      .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 4px solid #f5c6cb;
+      }
+
+      .buttons-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      button {
+        padding: 16px;
+        font-size: 18px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .refresh-btn {
+        background: #e95420;
+        color: white;
+      }
+
+      .refresh-btn:hover {
+        background: #d63f1b;
+      }
+
+      .logout-btn {
+        background: #5e2750;
+        color: white;
+      }
+
+      .logout-btn:hover {
+        background: #3d1a36;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .customer-name {
+          font-size: 20px;
+        }
+
+        .items-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .buttons-container {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 8px;
+        }
+
+        .header {
+          padding: 15px;
+        }
+
+        .header h1 {
+          font-size: 22px;
+        }
+
+        .customer-card {
+          padding: 15px;
+        }
+
+        .customer-name {
+          font-size: 18px;
+        }
+
+        .items-grid {
+          grid-template-columns: 1fr;
+        }
+
+        button {
+          padding: 14px;
+          font-size: 16px;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Lade-Übersicht (Gesamt)</h1>
-    <div id="loading-list">Lade Daten...</div>
+    <div class="header">
+      <h1>🚚 Lade-Übersicht (Gesamt)</h1>
+      <p>Aggregierte Bestellmenge pro Kunde für den heutigen Tag</p>
+      <div class="timestamp" id="timestamp"></div>
+    </div>
+
+    <div class="loading-list" id="loading-list">
+      <div class="loading-text">⏳ Daten werden geladen...</div>
+    </div>
+
+    <div class="buttons-container">
+      <button class="refresh-btn" onclick="loadSummary()">🔄 Aktualisieren</button>
+      <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
+    </div>
 
     <script>
-      async function loadSummary() {
-        const res = await fetch("/api/loading-summary", {
-          headers: { "x-admin-key": "ich-liebe-naime"  }, 
-        });
-        const data = await res.json();
-        document.getElementById("loading-list").innerHTML = data
-          .map(
-            (d) => `
-                <div class="customer-card">
-                    <b>${d.customer_name}:</b> ${d.total_items} Kisten/Einheiten
-                </div>
-            `,
-          )
-          .join("");
+      // Security check
+      if (localStorage.getItem("isAdmin") !== "true") {
+        window.location.href = "index.html";
       }
+
+      async function loadSummary() {
+        const loadingList = document.getElementById("loading-list");
+        loadingList.innerHTML = '<div class="loading-text">⏳ Daten werden geladen...</div>';
+
+        try {
+          const res = await fetch("/api/loading-summary", {
+            headers: { "x-admin-key": "ich-liebe-naime" },
+          });
+
+          if (!res.ok) {
+            throw new Error("Fehler beim Laden der Daten");
+          }
+
+          const data = await res.json();
+
+          if (!data || data.length === 0) {
+            loadingList.innerHTML = '<div class="loading-text">📭 Keine Bestellungen für heute</div>';
+            return;
+          }
+
+          loadingList.className = "";
+          loadingList.innerHTML = data
+            .map(
+              (d) => `
+                <div class="customer-card">
+                  <div class="customer-name">👤 ${escapeHtml(d.customer_name)}</div>
+                  <div class="items-grid">
+                    <div class="item-badge">
+                      <div class="item-quantity">${d.total_items || 0}</div>
+                      <div class="item-unit">Einheiten</div>
+                    </div>
+                  </div>
+                </div>
+              `,
+            )
+            .join("");
+
+          updateTimestamp();
+        } catch (error) {
+          console.error("Fehler:", error);
+          loadingList.innerHTML = `
+            <div class="error-message">
+              ❌ Fehler beim Laden: ${escapeHtml(error.message)}<br>
+              <small>Bitte aktualisieren Sie die Seite oder versuchen Sie es später erneut.</small>
+            </div>
+          `;
+        }
+      }
+
+      function updateTimestamp() {
+        const now = new Date();
+        const formatted = now.toLocaleString("de-DE", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        document.getElementById("timestamp").textContent = `Aktualisiert: ${formatted}`;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function logout() {
+        localStorage.removeItem("isAdmin");
+        window.location.href = "scan.html";
+      }
+
+      // Load on page load
       loadSummary();
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadSummary, 30000);
     </script>
   </body>
 </html>

@@ -2,111 +2,499 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bestellung erfassen</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
+        font-family: Ubuntu, sans-serif;
         font-size: 18px;
         line-height: 1.6;
         padding: 15px;
+        background-color: #f4f4f4;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+        color: #2c001e;
+      }
+
+      .customer-info {
+        font-size: 18px;
+        color: #555;
+        font-weight: 500;
+      }
+
+      .customer-code {
+        color: #e95420;
+        font-weight: bold;
       }
 
       .product {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         align-items: center;
-        padding: 20px 0; /* Mehr Platz zum Klicken */
-        border-bottom: 2px solid #ddd;
+        gap: 20px;
+        padding: 20px;
+        background: white;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .product-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
 
       .product img {
-        width: 80rem;
-        height: 80rem;
-      } /* Größere Bilder */
+        width: 140px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 12px;
+        background: #f0f0f0;
+      }
+
+      .product-details {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .product-name {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c001e;
+      }
+
+      .product-inputs {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
 
       input[type="number"] {
-        width: 80px;
-        height: 50px;
-        font-size: 20px; /* Besser lesbar */
+        flex: 1;
+        min-width: 100px;
+        padding: 15px;
+        font-size: 18px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-weight: bold;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #e95420;
+        box-shadow: 0 0 5px rgba(233, 84, 32, 0.3);
+      }
+
+      select {
+        flex: 1;
+        min-width: 100px;
+        padding: 15px;
+        font-size: 18px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #e95420;
+        box-shadow: 0 0 5px rgba(233, 84, 32, 0.3);
+      }
+
+      .order-summary {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin: 20px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .order-summary h2 {
+        font-size: 22px;
+        margin-bottom: 15px;
+        color: #2c001e;
+      }
+
+      .summary-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .summary-item:last-child {
+        border-bottom: none;
+      }
+
+      .summary-item-quantity {
+        font-weight: bold;
+        color: #e95420;
+      }
+
+      .buttons-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 30px;
       }
 
       button {
-        width: 100%;
         padding: 20px;
-        font-size: 1.2em;
-        margin-top: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .submit-btn {
+        background: #e95420;
+        color: white;
+        grid-column: 1;
+      }
+
+      .submit-btn:hover {
+        background: #d63f1b;
+      }
+
+      .logout-btn {
+        background: #5e2750;
+        color: white;
+      }
+
+      .logout-btn:hover {
+        background: #3d1a36;
+      }
+
+      .no-items-message {
+        background: #fff3cd;
+        color: #856404;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+          font-size: 16px;
+        }
+
+        .header {
+          padding: 15px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .product {
+          grid-template-columns: 1fr;
+          gap: 15px;
+          padding: 15px;
+        }
+
+        .product img {
+          width: 120px;
+          height: 120px;
+        }
+
+        input[type="number"],
+        select {
+          min-width: 80px;
+          padding: 12px;
+          font-size: 16px;
+        }
+
+        button {
+          padding: 18px;
+          font-size: 18px;
+        }
+
+        .product-name {
+          font-size: 22px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 8px;
+        }
+
+        .header h1 {
+          font-size: 22px;
+        }
+
+        .product img {
+          width: 100px;
+          height: 100px;
+        }
+
+        input[type="number"],
+        select {
+          font-size: 16px;
+          padding: 12px;
+        }
+
+        button {
+          padding: 16px;
+          font-size: 16px;
+        }
+
+        .product-name {
+          font-size: 20px;
+        }
+
+        .product-inputs {
+          gap: 8px;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Bestellung</h1>
-    <div id="product-list">Lädt...</div>
-    <button onclick="submitOrder()">Bestellung senden</button>
+    <div class="header">
+      <h1>🛒 Bestellung</h1>
+      <div class="customer-info">
+        Kunde: <span class="customer-code" id="customerDisplay">Lädt...</span>
+      </div>
+    </div>
+
+    <div id="product-list">
+      <div style="text-align: center; padding: 40px; font-size: 20px; color: #666;">
+        Produkte werden geladen...
+      </div>
+    </div>
+
+    <div id="order-summary" class="order-summary" style="display: none;">
+      <h2>📋 Zusammenfassung</h2>
+      <div id="summary-content"></div>
+    </div>
+
+    <div class="buttons-container">
+      <button class="submit-btn" onclick="submitOrder()">✅ Bestellung senden</button>
+      <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
+    </div>
 
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       let code = urlParams.get("code");
+      let customerName = "";
 
       if (code) {
-        localStorage.setItem("customerCode", code); // Code speichern
+        localStorage.setItem("customerCode", code);
       } else {
-        code = localStorage.getItem("customerCode"); // Code aus Speicher holen
+        code = localStorage.getItem("customerCode");
       }
 
-      // 2. Sicherheits-Check: Wenn kein Code da ist, Abbruch
-      if (!code) {
-        document.body.innerHTML =
-          "<h1>Fehler: Kein Kunden-Zugang gefunden.</h1><p>Bitte scannen Sie den QR-Code in der Küche.</p>";
-      } else {
-        loadProducts(); // Wenn Code da ist, Produkte laden
-      }
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!code) {
+          document.body.innerHTML = `
+            <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px;">
+              <h1 style="font-size: 28px; color: #2c001e; margin-bottom: 20px;">📱 QR-Code erforderlich</h1>
+              <p style="font-size: 20px; color: #666;">Bitte scannen Sie den QR-Code, um Ihre Bestellung zu starten.</p>
+            </div>
+          `;
+        } else {
+          loadProducts();
+        }
+      });
 
       async function loadProducts() {
-        // Erst Validierung
-        const val = await fetch(`/api/validate-customer?code=${code}`);
-        if (!val.ok)
-          return (document.body.innerHTML = "<h1>Zugriff verweigert!</h1>");
+        try {
+          // Validate customer and get info
+          const valRes = await fetch(`/api/validate-customer?code=${code}`);
+          if (!valRes.ok) {
+            document.body.innerHTML = `
+              <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px;">
+                <h1 style="color: #d9534f;">❌ Zugriff verweigert!</h1>
+                <p>Kundencode ungültig.</p>
+              </div>
+            `;
+            return;
+          }
 
-        const res = await fetch("/api/products");
-        const products = await res.json();
-        document.getElementById("product-list").innerHTML = products
-          .map(
-            (p) => `
-                <div class="product">
-                    ${p.image_url ? `<img src="${p.image_url}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 10px;">` : ""}
-                    <span>${p.name} (${p.unit})</span>
-                    <input type="number" id="qty-${p.id}" value="0" min="0">
+          // Fetch products
+          const res = await fetch("/api/products");
+          if (!res.ok) throw new Error("Produkte konnten nicht geladen werden");
+
+          const products = await res.json();
+
+          // Update customer display
+          document.getElementById("customerDisplay").textContent = code;
+
+          // Generate product list
+          document.getElementById("product-list").innerHTML = products
+            .map((p) => {
+              const units = p.unit ? p.unit.split(",").map(u => u.trim()) : ["Stück"];
+              const unitOptions = units
+                .map((u) => `<option value="${u}">${u}</option>`)
+                .join("");
+
+              const productImage = p.image_url 
+                ? `<img src="${p.image_url}" alt="${p.name}" onerror="this.style.display='none'">`
+                : `<div style="width: 140px; height: 140px; background: #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;">Keine Bild</div>`;
+
+              return `
+                <div class="product" data-product-id="${p.id}" data-product-name="${p.name}">
+                  <div class="product-image-container">
+                    ${productImage}
+                  </div>
+                  <div class="product-details">
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-inputs">
+                      <input 
+                        type="number" 
+                        id="qty-${p.id}" 
+                        class="product-quantity"
+                        value="0" 
+                        min="0" 
+                        step="0.1"
+                        placeholder="Menge"
+                        data-product-id="${p.id}"
+                        onchange="updateSummary()"
+                        oninput="updateSummary()"
+                      >
+                      <select id="unit-${p.id}" class="product-unit" data-product-id="${p.id}" onchange="updateSummary()">
+                        ${unitOptions}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-            `,
-          )
-          .join("");
+              `;
+            })
+            .join("");
+
+          updateSummary();
+        } catch (error) {
+          console.error("Fehler beim Laden der Produkte:", error);
+          document.getElementById("product-list").innerHTML = `
+            <div class="no-items-message">
+              ⚠️ Fehler: Produkte konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.
+            </div>
+          `;
+        }
+      }
+
+      function updateSummary() {
+        const items = [];
+        const products = document.querySelectorAll(".product");
+
+        products.forEach((p) => {
+          const input = p.querySelector(".product-quantity");
+          const select = p.querySelector(".product-unit");
+          const qty = parseFloat(input.value) || 0;
+          
+          if (qty > 0) {
+            items.push({
+              name: p.dataset.productName,
+              quantity: qty,
+              unit: select.value,
+            });
+          }
+        });
+
+        const summaryContainer = document.getElementById("order-summary");
+        const summaryContent = document.getElementById("summary-content");
+
+        if (items.length === 0) {
+          summaryContainer.style.display = "none";
+        } else {
+          summaryContainer.style.display = "block";
+          summaryContent.innerHTML = items
+            .map(
+              (item) => `
+                <div class="summary-item">
+                  <span>${item.name}</span>
+                  <span class="summary-item-quantity">${item.quantity} ${item.unit}</span>
+                </div>
+              `
+            )
+            .join("");
+        }
       }
 
       async function submitOrder() {
-        const inputs = document.querySelectorAll("input");
         const items = [];
-        inputs.forEach((i) => {
-          if (i.value > 0)
+        const products = document.querySelectorAll(".product");
+
+        products.forEach((p) => {
+          const input = p.querySelector(".product-quantity");
+          const select = p.querySelector(".product-unit");
+          const qty = parseFloat(input.value) || 0;
+          
+          if (qty > 0) {
             items.push({
-              product_id: i.id.replace("qty-", ""),
-              quantity: i.value,
+              product_id: parseInt(input.dataset.productId),
+              quantity: qty,
+              unit: select.value,
             });
+          }
         });
 
-        const res = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customer_code: code, items }),
-        });
+        if (items.length === 0) {
+          alert("❌ Bitte mindestens ein Produkt auswählen!");
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customer_code: code, items }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            alert(`✅ Bestellung #${data.orderId} erfolgreich gespeichert!`);
+            // Reset form
+            document.querySelectorAll(".product-quantity").forEach(input => input.value = "0");
+            updateSummary();
+          } else {
+            const error = await res.text();
+            alert(`❌ Fehler: ${error}`);
+          }
+        } catch (error) {
+          console.error("Fehler beim Senden der Bestellung:", error);
+          alert("❌ Fehler beim Senden der Bestellung!");
+        }
       }
 
       function logout() {
         localStorage.removeItem("customerCode");
-        // Leite auf eine Seite um, die den QR-Code zeigt
-        window.location.href = "login_info.html";
+        window.location.href = "scan.html";
       }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        loadProducts();
-      });
     </script>
   </body>
 </html>

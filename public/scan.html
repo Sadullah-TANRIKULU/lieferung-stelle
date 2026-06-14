@@ -2,20 +2,205 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Zugang benötigt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zugang benötigt - QR-Code Scan</title>
     <style>
-        body { font-family: Ubuntu, sans-serif; background: #2c001e; color: white; text-align: center; padding: 50px; }
-        .card { background: #5e2750; padding: 30px; border-radius: 15px; display: inline-block; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #2c001e 0%, #5e2750 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #e95420;
+        }
+
+        p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .qr-code-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-code-container img {
+            width: 240px;
+            height: 240px;
+            border-radius: 10px;
+        }
+
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #e95420;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .info h3 {
+            color: #e95420;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .info li {
+            margin-bottom: 5px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #e95420;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: 2px solid #e95420;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: #e95420;
+            color: white;
+        }
+
+        .admin-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .admin-section p {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .admin-btn {
+            background: rgba(233, 84, 32, 0.2);
+            color: #e95420;
+            border: 2px solid #e95420;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            background: #e95420;
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+
+            .qr-code-container img {
+                width: 200px;
+                height: 200px;
+            }
+
+            .info {
+                padding: 15px;
+                font-size: 13px;
+            }
+
+            .info ul {
+                margin-left: 15px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Zugang beendet</h1>
-        <p>Bitte scannen Sie den QR-Code erneut, um Ihre Bestellung fortzusetzen.</p>
-        
-        <img src="assets/qr-code.png" alt="QR-Code" style="width: 200px; height: 200px; background: white; padding: 10px;">
-        
-        <p><a href="bestellung.html" style="color: #e95420; font-weight: bold;">Zurück zum Bestellsystem</a></p>
+    <div class="container">
+        <h1>📱 Zugang erforderlich</h1>
+        <p>Scannen Sie Ihren persönlichen QR-Code, um auf das System zuzugreifen</p>
+
+        <div class="qr-code-container">
+            <img src="assets/qr-code.png" alt="QR-Code zum Scannen" onerror="this.style.display='none'">
+        </div>
+
+        <div class="info">
+            <h3>📖 Verwendung:</h3>
+            <ul>
+                <li>Scannen Sie den QR-Code mit Ihrer Kamera oder einem QR-Reader</li>
+                <li>Sie werden automatisch zur Bestellung weitergeleitet</li>
+                <li>Geben Sie die gewünschten Mengen ein</li>
+                <li>Bestätigen Sie Ihre Bestellung</li>
+            </ul>
+        </div>
+
+        <a href="bestellung.html" class="back-link">🔄 Zurück zum Bestellsystem</a>
+
+        <div class="admin-section">
+            <p>🔐 Sind Sie Administrator?</p>
+            <button class="admin-btn" onclick="loginAsAdmin()">Admin-Zugang</button>
+        </div>
     </div>
+
+    <script>
+        function loginAsAdmin() {
+            const password = prompt("Geben Sie das Admin-Passwort ein:");
+            if (password === "ich-liebe-naime") {
+                localStorage.setItem("isAdmin", "true");
+                window.location.href = "index.html";
+            } else {
+                alert("❌ Falsches Passwort");
+            }
+        }
+    </script>
 </body>
 </html>
