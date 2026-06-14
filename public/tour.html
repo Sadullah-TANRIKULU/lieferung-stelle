@@ -365,7 +365,7 @@
                         statusClass === "open"
                           ? `
                         <div style="margin-top: 10px; margin-bottom: 10px;">
-                          <input type="text" id="note-${item.id}" placeholder="Notiz hinzufügen (optional)..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px;" />
+                          <input type="text" id="note-${item.id}" placeholder="Notiz hinzufügen (optional)..." oninput="saveTypedNote(${item.id}, this.value)" value="${escapeHtml(typedNotes[item.id] || '')}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px;" />
                         </div>
                         <div class="buttons">
                           <button class="btn-delivered" onclick="updateStatus(${item.id}, 'delivered')">✅ Geliefert</button>
@@ -395,6 +395,12 @@
         }
       }
 
+      const typedNotes = {};
+
+      function saveTypedNote(itemId, value) {
+        typedNotes[itemId] = value;
+      }
+
       async function updateStatus(itemId, newStatus) {
         const adminKey = localStorage.getItem("adminKey") || "";
         const noteInput = document.getElementById(`note-${itemId}`);
@@ -418,6 +424,7 @@
           }
 
           if (res.ok) {
+            delete typedNotes[itemId]; // Clear stored note
             await loadTour(); // Refresh the list
           } else {
             alert("❌ Fehler beim Aktualisieren des Status");
@@ -455,7 +462,14 @@
       loadTour();
 
       // Auto-refresh every 30 seconds
-      setInterval(loadTour, 30000);
+      setInterval(() => {
+        // Skip reload if driver is currently typing in a note input
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.id && activeEl.id.startsWith("note-")) {
+          return;
+        }
+        loadTour();
+      }, 30000);
     </script>
   </body>
 </html>
