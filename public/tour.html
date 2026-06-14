@@ -305,10 +305,19 @@
         const tourList = document.getElementById("tour-list");
         tourList.innerHTML = '<div class="loading-text">⏳ Route wird geladen...</div>';
 
+        const adminKey = localStorage.getItem("adminKey") || "";
+
         try {
           const res = await fetch("/api/delivery-tour", {
-            headers: { "x-admin-key": "ich-liebe-naime" },
+            headers: { "x-admin-key": adminKey },
           });
+
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
 
           if (!res.ok) {
             throw new Error("Fehler beim Laden der Tour");
@@ -382,15 +391,24 @@
       }
 
       async function updateStatus(itemId, newStatus) {
+        const adminKey = localStorage.getItem("adminKey") || "";
+
         try {
           const res = await fetch(`/api/update-status/${itemId}`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
-              "x-admin-key": "ich-liebe-naime",
+              "x-admin-key": adminKey,
             },
             body: JSON.stringify({ status: newStatus }),
           });
+
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
 
           if (res.ok) {
             await loadTour(); // Refresh the list
@@ -422,6 +440,7 @@
 
       function logout() {
         localStorage.removeItem("isAdmin");
+        localStorage.removeItem("adminKey");
         window.location.href = "scan.html";
       }
 

@@ -346,6 +346,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('products')">📦 Produkte</button>
       <button class="tab-btn" onclick="showTab('orders')">📋 Bestellungen</button>
+      <button class="tab-btn" onclick="showTab('customers')">👥 Kunden</button>
     </div>
 
     <!-- PRODUCTS TAB -->
@@ -366,6 +367,7 @@
         <div class="form-group">
           <label for="prodUnit">Verfügbare Einheiten</label>
           <select id="prodUnit">
+            <option value="kg,Stück,Bund,Kiste" selected>kg, Stück, Bund, Kiste (alle)</option>
             <option value="kg">kg (Kilogramm)</option>
             <option value="Stück">Stück (Einzeln)</option>
             <option value="Bund">Bund (Bündel)</option>
@@ -382,12 +384,9 @@
 
         <div class="form-group">
           <label for="prodImage">Bild-Dateiname</label>
-          <input 
-            id="prodImage" 
-            type="text"
-            placeholder="z.B. kartoffel.jpg (aus dem assets/ Ordner)" 
-            onkeypress="if(event.key==='Enter') addProduct()"
-          />
+          <select id="prodImage">
+            <option value="">Kein Bild</option>
+          </select>
         </div>
 
         <div id="preview">
@@ -397,6 +396,14 @@
         <div id="message" class="message"></div>
 
         <button onclick="addProduct()">✅ Produkt speichern</button>
+      </div>
+
+      <div class="container" style="margin-top: 20px;">
+        <h1>📦 Existierende Produkte</h1>
+        <p style="color: #ccc; margin-bottom: 15px;">Übersicht aller in der Datenbank gespeicherten Produkte</p>
+        <div id="products-list-container" class="table-container">
+          <div class="loading-text">⏳ Produkte werden geladen...</div>
+        </div>
       </div>
     </div>
 
@@ -413,12 +420,79 @@
       </div>
     </div>
 
+    <!-- CUSTOMERS TAB -->
+    <div id="customers" class="tab-content">
+      <div class="container">
+        <h1>👥 Neuer Kunde</h1>
+        
+        <div class="form-group">
+          <label for="custName">Kundenname</label>
+          <input 
+            id="custName" 
+            type="text"
+            placeholder="z.B. Bäckerei Müller, Familie Schmidt..." 
+            onkeypress="if(event.key==='Enter') addCustomer()"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="custCode">Kundencode (eindeutig)</label>
+          <input 
+            id="custCode" 
+            type="text"
+            placeholder="z.B. MUE-01, SCH-02..." 
+            onkeypress="if(event.key==='Enter') addCustomer()"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="custAddress">Adresse (Optional)</label>
+          <input 
+            id="custAddress" 
+            type="text"
+            placeholder="z.B. Hauptstraße 12, 12345 Berlin..." 
+            onkeypress="if(event.key==='Enter') addCustomer()"
+          />
+        </div>
+        
+        <div id="cust-message" class="message"></div>
+        <button onclick="addCustomer()">✅ Kunde speichern</button>
+      </div>
+
+      <div class="container" style="margin-top: 20px;">
+        <h1>👥 Alle Kunden</h1>
+        <p style="color: #ccc; margin-bottom: 15px;">Übersicht aller Kunden, deren Bestell-Links und QR-Codes</p>
+        <div id="customers-container" class="table-container">
+          <div class="loading-text">⏳ Kunden werden geladen...</div>
+        </div>
+      </div>
+    </div>
+
     <button class="logout-btn" onclick="logout()" style="margin-top: 20px;">🚪 Abmelden</button>
+
+    <!-- QR CODE MODAL -->
+    <div id="qrModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+      <div style="background-color: #5e2750; margin: auto; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); border: 2px solid #e95420; color: white;">
+        <h2 id="qrModalTitle" style="color: #e95420; margin-bottom: 15px;">QR-Code</h2>
+        <div id="qrModalCode" style="background: white; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 15px;">
+          <!-- QR Code Image goes here -->
+        </div>
+        <p style="font-size: 14px; margin-bottom: 15px; word-break: break-all; color: #eee;" id="qrModalUrl"></p>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="copyQrUrl()" style="background: #2c001e; font-size: 14px; padding: 10px; margin-top: 0; flex: 1;">📋 Link kopieren</button>
+          <button onclick="closeQrModal()" style="background: #e95420; font-size: 14px; padding: 10px; margin-top: 0; flex: 1;">❌ Schließen</button>
+        </div>
+      </div>
+    </div>
 
     <script>
       // Security check
       if (localStorage.getItem("isAdmin") !== "true") {
         window.location.href = "index.html";
+      } else {
+        loadAssets();
+        loadProducts();
+        loadCustomers();
       }
 
       // Tab switching
@@ -442,12 +516,51 @@
         // Load orders if orders tab is opened
         if (tabName === "orders") {
           loadOrders();
+        } else if (tabName === "customers") {
+          loadCustomers();
         }
       }
 
       // ===== PRODUCT MANAGEMENT =====
-      document.getElementById("prodImage").addEventListener("input", (e) => {
+      // Assets aus dem backend laden und im Select dropdown anzeigen
+      async function loadAssets() {
+        const selectEl = document.getElementById("prodImage");
+        const adminKey = localStorage.getItem("adminKey") || "";
+        try {
+          const res = await fetch("/api/assets", {
+            headers: {
+              "x-admin-key": adminKey,
+            },
+          });
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
+          if (res.ok) {
+            const files = await res.json();
+            selectEl.innerHTML = '<option value="">Kein Bild</option>';
+            files.forEach(file => {
+              const opt = document.createElement("option");
+              opt.value = file;
+              opt.textContent = file;
+              selectEl.appendChild(opt);
+            });
+          } else {
+            console.error("Fehler beim Laden der Assets:", await res.text());
+          }
+        } catch (err) {
+          console.error("Netzwerkfehler beim Laden der Assets:", err);
+        }
+      }
+
+      document.getElementById("prodImage").addEventListener("change", (e) => {
         const preview = document.getElementById("previewImg");
+        if (!e.target.value) {
+          preview.style.display = "none";
+          return;
+        }
         preview.src = "assets/" + e.target.value;
         preview.onload = () => {
           preview.style.display = "block";
@@ -471,21 +584,29 @@
 
         const image_url_full = image_url ? "assets/" + image_url : null;
 
+        const adminKey = localStorage.getItem("adminKey") || "";
         try {
           const res = await fetch("/api/products", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "x-admin-key": "ich-liebe-naime",
+              "x-admin-key": adminKey,
             },
             body: JSON.stringify({ name, unit, image_url: image_url_full }),
           });
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
 
           if (res.ok) {
             showMessage("✅ Produkt erfolgreich gespeichert!", "success");
             document.getElementById("prodName").value = "";
             document.getElementById("prodImage").value = "";
             document.getElementById("previewImg").style.display = "none";
+            loadProducts();
             
             setTimeout(() => {
               messageEl.style.display = "none";
@@ -506,15 +627,87 @@
         messageEl.className = `message ${type}`;
       }
 
+      // ===== PRODUCTS LIST =====
+      async function loadProducts() {
+        const container = document.getElementById("products-list-container");
+        if (!container) return;
+        container.innerHTML = '<div class="loading-text">⏳ Produkte werden geladen...</div>';
+
+        try {
+          const res = await fetch("/api/products");
+          if (!res.ok) {
+            throw new Error("Fehler beim Laden der Produkte");
+          }
+
+          const products = await res.json();
+
+          if (!products || products.length === 0) {
+            container.innerHTML = '<div class="loading-text">📭 Keine Produkte vorhanden</div>';
+            return;
+          }
+
+          let html = `
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 80px;">ID</th>
+                  <th style="width: 120px;">Bild</th>
+                  <th>Produktname</th>
+                  <th>Einheit</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          products.forEach((product) => {
+            const imgHtml = product.image_url 
+              ? `<img src="${product.image_url}" alt="${escapeHtml(product.name)}" style="max-height: 40px; max-width: 60px; border-radius: 4px; display: block;" onerror="this.style.display='none'">` 
+              : `<span style="color: #999; font-size: 12px;">Kein Bild</span>`;
+
+            html += `
+              <tr>
+                <td><strong>#${product.id}</strong></td>
+                <td>${imgHtml}</td>
+                <td><strong>${escapeHtml(product.name)}</strong></td>
+                <td><span class="customer-code">${escapeHtml(product.unit)}</span></td>
+              </tr>
+            `;
+          });
+
+          html += `
+              </tbody>
+            </table>
+          `;
+
+          container.innerHTML = html;
+        } catch (error) {
+          console.error("Fehler beim Laden der Produkte:", error);
+          container.innerHTML = `
+            <div class="error-message">
+              ❌ Fehler: ${escapeHtml(error.message)}<br>
+              <small>Bitte aktualisieren Sie die Seite oder versuchen Sie es später erneut.</small>
+            </div>
+          `;
+        }
+      }
+
       // ===== ORDERS MANAGEMENT =====
       async function loadOrders() {
         const container = document.getElementById("orders-container");
         container.innerHTML = '<div class="loading-text">⏳ Bestellungen werden geladen...</div>';
 
+        const adminKey = localStorage.getItem("adminKey") || "";
         try {
           const res = await fetch("/api/orders-list", {
-            headers: { "x-admin-key": "ich-liebe-naime" },
+            headers: { "x-admin-key": adminKey },
           });
+
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
 
           if (!res.ok) {
             throw new Error("Fehler beim Laden der Bestellungen");
@@ -597,11 +790,174 @@
 
       function logout() {
         localStorage.removeItem("isAdmin");
+        localStorage.removeItem("adminKey");
         window.location.href = "scan.html";
       }
-    </script>
-  </body>
-</html>
+
+      // ===== CUSTOMERS MANAGEMENT =====
+      let currentQrUrl = "";
+
+      async function loadCustomers() {
+        const container = document.getElementById("customers-container");
+        if (!container) return;
+        container.innerHTML = '<div class="loading-text">⏳ Kunden werden geladen...</div>';
+
+        const adminKey = localStorage.getItem("adminKey") || "";
+        try {
+          const res = await fetch("/api/customers", {
+            headers: { "x-admin-key": adminKey },
+          });
+
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
+
+          if (!res.ok) {
+            throw new Error("Fehler beim Laden der Kunden");
+          }
+
+          const customers = await res.json();
+
+          if (!customers || customers.length === 0) {
+            container.innerHTML = '<div class="loading-text">📭 Keine Kunden vorhanden</div>';
+            return;
+          }
+
+          let html = `
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 80px;">ID</th>
+                  <th>Name</th>
+                  <th>Kundencode</th>
+                  <th>Adresse</th>
+                  <th>Bestell-Link & Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          customers.forEach((cust) => {
+            const customerUrl = `${window.location.origin}/bestellung.html?code=${cust.customer_code}`;
+            html += `
+              <tr>
+                <td><strong>#${cust.id}</strong></td>
+                <td><strong>${escapeHtml(cust.name)}</strong></td>
+                <td><span class="customer-code">${escapeHtml(cust.customer_code)}</span></td>
+                <td>${cust.address ? escapeHtml(cust.address) : '<em style="color: #999;">Keine Adresse</em>'}</td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <a href="${customerUrl}" target="_blank" style="color: #e95420; text-decoration: none; font-weight: bold;">Öffnen ↗</a>
+                    <button onclick="showQrCode('${escapeHtml(cust.name)}', '${cust.customer_code}')" style="margin-top: 0; padding: 8px 12px; font-size: 12px; width: auto; background: #e95420;">📱 QR-Code</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+
+          html += `
+              </tbody>
+            </table>
+          `;
+
+          container.innerHTML = html;
+        } catch (error) {
+          console.error("Fehler beim Laden der Kunden:", error);
+          container.innerHTML = `
+            <div class="error-message">
+              ❌ Fehler: ${escapeHtml(error.message)}<br>
+              <small>Bitte versuchen Sie es später erneut.</small>
+            </div>
+          `;
+        }
+      }
+
+      async function addCustomer() {
+        const name = document.getElementById("custName").value.trim();
+        const customer_code = document.getElementById("custCode").value.trim();
+        const address = document.getElementById("custAddress").value.trim();
+        const messageEl = document.getElementById("cust-message");
+
+        if (!name || !customer_code) {
+          showCustomerMessage("❌ Bitte Name und Kundencode eingeben!", "error");
+          return;
+        }
+
+        const adminKey = localStorage.getItem("adminKey") || "";
+        try {
+          const res = await fetch("/api/customers", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-key": adminKey,
+            },
+            body: JSON.stringify({ name, customer_code, address }),
+          });
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
+
+          if (res.ok) {
+            showCustomerMessage("✅ Kunde erfolgreich angelegt!", "success");
+            document.getElementById("custName").value = "";
+            document.getElementById("custCode").value = "";
+            document.getElementById("custAddress").value = "";
+            loadCustomers();
+
+            setTimeout(() => {
+              messageEl.style.display = "none";
+            }, 2000);
+          } else {
+            const errVal = await res.json();
+            showCustomerMessage(`❌ Fehler: ${errVal.error || "Unbekannter Fehler"}`, "error");
+          }
+        } catch (err) {
+          console.error("Fehler:", err);
+          showCustomerMessage("❌ Netzwerkfehler oder Server nicht erreichbar", "error");
+        }
+      }
+
+      function showCustomerMessage(text, type) {
+        const messageEl = document.getElementById("cust-message");
+        messageEl.textContent = text;
+        messageEl.className = `message ${type}`;
+        messageEl.style.display = "block";
+      }
+
+      function showQrCode(name, code) {
+        const modal = document.getElementById("qrModal");
+        const title = document.getElementById("qrModalTitle");
+        const urlDisplay = document.getElementById("qrModalUrl");
+        const qrContainer = document.getElementById("qrModalCode");
+
+        const customerUrl = `${window.location.origin}/bestellung.html?code=${code}`;
+        currentQrUrl = customerUrl;
+
+        title.textContent = `QR-Code für ${name}`;
+        urlDisplay.textContent = customerUrl;
+        
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(customerUrl)}" alt="QR Code" style="display: block;" />`;
+
+        modal.style.display = "flex";
+      }
+
+      function closeQrModal() {
+        document.getElementById("qrModal").style.display = "none";
+      }
+
+      function copyQrUrl() {
+        if (!currentQrUrl) return;
+        navigator.clipboard.writeText(currentQrUrl).then(() => {
+          alert("📋 Link in Zwischenablage kopiert!");
+        }).catch(err => {
+          console.error("Fehler beim Kopieren:", err);
+        });
       }
     </script>
   </body>

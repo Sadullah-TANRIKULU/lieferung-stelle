@@ -227,10 +227,19 @@
         const loadingList = document.getElementById("loading-list");
         loadingList.innerHTML = '<div class="loading-text">⏳ Daten werden geladen...</div>';
 
+        const adminKey = localStorage.getItem("adminKey") || "";
+
         try {
           const res = await fetch("/api/loading-summary", {
-            headers: { "x-admin-key": "ich-liebe-naime" },
+            headers: { "x-admin-key": adminKey },
           });
+
+          if (res.status === 403) {
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminKey");
+            window.location.href = "scan.html";
+            return;
+          }
 
           if (!res.ok) {
             throw new Error("Fehler beim Laden der Daten");
@@ -290,6 +299,7 @@
 
       function logout() {
         localStorage.removeItem("isAdmin");
+        localStorage.removeItem("adminKey");
         window.location.href = "scan.html";
       }
 

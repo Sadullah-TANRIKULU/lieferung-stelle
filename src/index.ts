@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { query } from "./db";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -192,6 +194,62 @@ app.post("/api/products", adminOnly, async (req, res) => {
   }
 });
 
+// Assets abrufen (Bilder auflisten)
+app.get("/api/assets", adminOnly, (req, res) => {
+  const assetsDir = path.join(__dirname, "..", "public", "assets");
+  fs.readdir(assetsDir, (err, files) => {
+    if (err) {
+      console.error("Fehler beim Lesen des Assets-Ordners:", err);
+      return res.status(500).json({ error: "Fehler beim Lesen des Assets-Ordners" });
+    }
+    const imageExtensions = [".webp", ".jpg", ".jpeg", ".png", ".gif", ".svg"];
+    const images = files.filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      return imageExtensions.includes(ext);
+    });
+    res.json(images);
+  });
+});
+
+// Admin-Schlüssel validieren
+app.get("/api/validate-admin", adminOnly, (req, res) => {
+  res.send("OK");
+});
+
+// Alle Kunden abrufen
+app.get("/api/customers", adminOnly, async (req, res) => {
+  try {
+    const result = await query("SELECT * FROM customers ORDER BY name ASC;");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fehler beim Laden der Kunden:", err);
+    res.status(500).json({ error: "Fehler beim Laden der Kunden" });
+  }
+});
+
+// Neuen Kunden anlegen
+app.post("/api/customers", adminOnly, async (req, res) => {
+  const { name, customer_code, address } = req.body;
+  if (!name || !customer_code) {
+    return res.status(400).json({ error: "Name und Kundencode sind Pflichtfelder!" });
+  }
+
+  try {
+    const result = await query(
+      "INSERT INTO customers (name, customer_code, address) VALUES ($1, $2, $3) RETURNING *;",
+      [name, customer_code.trim(), address ? address.trim() : null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err: any) {
+    console.error("Fehler beim Erstellen des Kunden:", err);
+    if (err.code === "23505") {
+      return res.status(400).json({ error: "Dieser Kundencode existiert bereits!" });
+    }
+    res.status(500).json({ error: "Fehler beim Erstellen des Kunden" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server läuft auf Port ${port}`);
 });
+
