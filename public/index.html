@@ -5,6 +5,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Logistik Dashboard</title>
+  <!-- PWA Meta and Links -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#e95420" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/assets/icon.svg" />
   <style>
     * {
       margin: 0;
@@ -164,6 +170,15 @@
     if (localStorage.getItem("isAdmin") !== "true") {
       alert("❌ Zugriff verweigert! Nur für Logistik-Personal.");
       window.location.href = "scan.html";
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
     }
   </script>
 </body>

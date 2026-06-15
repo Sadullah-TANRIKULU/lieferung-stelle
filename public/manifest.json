@@ -1,0 +1,30 @@
+{
+  "name": "Lieferung Stelle Logistik",
+  "short_name": "Logistik",
+  "description": "Logistik- und Liefersystem für Bestellung, Beladung und Auslieferung",
+  "start_url": "/scan.html",
+  "display": "standalone",
+  "background_color": "#2c001e",
+  "theme_color": "#e95420",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}

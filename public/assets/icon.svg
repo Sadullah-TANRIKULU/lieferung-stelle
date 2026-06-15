@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e95420" />
+      <stop offset="100%" stop-color="#5e2750" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Background Circle with elegant gradient -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg-grad)" />
+  
+  <!-- Stylized Box & Checkmark Graphic inside -->
+  <g filter="url(#shadow)" transform="translate(116, 116) scale(0.55)">
+    <!-- Box Outline -->
+    <path d="M256,12L44,118v212l212,106l212,-106v-212L256,12Z" fill="none" stroke="#ffffff" stroke-width="24" stroke-linejoin="round"/>
+    <!-- Box Inner Lines (Isometric) -->
+    <path d="M256,12v412M44,118l212,106l212,-106" fill="none" stroke="#ffffff" stroke-width="24" stroke-linejoin="round"/>
+    
+    <!-- Delivery checkmark overlay -->
+    <path d="M120,240 L220,340 L400,160" fill="none" stroke="#28a745" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M120,240 L220,340 L400,160" fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

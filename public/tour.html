@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fahrer-Tour</title>
+    <!-- PWA Meta and Links -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#e95420" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/assets/icon.svg" />
     <style>
       * {
         margin: 0;
@@ -264,6 +270,32 @@
           grid-template-columns: 1fr;
         }
       }
+
+      .item.temp-checked {
+        border-color: #28a745 !important;
+        background-color: #f0fdf4 !important;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+      }
+
+      .check-toggle-container {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        gap: 8px;
+        background: #f0f0f0;
+        padding: 6px 12px;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .check-toggle-container:hover {
+        background: #e5e5e5;
+      }
+
+      .item.temp-checked .check-toggle-container {
+        background: #d4edda;
+        color: #155724;
+      }
     </style>
   </head>
   <body>
@@ -345,6 +377,8 @@
               return customerItems
                 .map((item) => {
                   const statusClass = item.status || "open";
+                  const isTempChecked = tempCheckedItems[item.id] || false;
+                  const tempCheckedClass = isTempChecked ? "temp-checked" : "";
                   const statusLabel =
                     statusClass === "delivered"
                       ? "✅ Geliefert"
@@ -353,9 +387,17 @@
                         : "⏳ Offen";
 
                   return `
-                    <div class="item ${statusClass}">
-                      <div class="customer-name">${escapeHtml(customerName)}</div>
-                      <div class="product-info">
+                    <div class="item ${statusClass} ${tempCheckedClass}" id="card-${item.id}">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                        <div class="customer-name" style="margin-bottom: 0;">${escapeHtml(customerName)}</div>
+                        ${statusClass === "open" ? `
+                          <label class="check-toggle-container">
+                            <input type="checkbox" onchange="toggleTempCheck(${item.id})" ${isTempChecked ? "checked" : ""} style="width: 20px; height: 20px; cursor: pointer;" />
+                            <span style="font-size: 14px; font-weight: bold; user-select: none;">Geprüft</span>
+                          </label>
+                        ` : ''}
+                      </div>
+                      <div class="product-info" style="margin-top: 10px;">
                         📦 <strong>${escapeHtml(item.product_name)}</strong> - ${item.quantity} ${escapeHtml(item.unit || 'Stück')}
                       </div>
                       <div class="status-badge status-${statusClass}">
@@ -396,9 +438,22 @@
       }
 
       const typedNotes = {};
+      const tempCheckedItems = {};
 
       function saveTypedNote(itemId, value) {
         typedNotes[itemId] = value;
+      }
+
+      function toggleTempCheck(itemId) {
+        tempCheckedItems[itemId] = !tempCheckedItems[itemId];
+        const card = document.getElementById(`card-${itemId}`);
+        if (card) {
+          if (tempCheckedItems[itemId]) {
+            card.classList.add("temp-checked");
+          } else {
+            card.classList.remove("temp-checked");
+          }
+        }
       }
 
       async function updateStatus(itemId, newStatus) {
@@ -425,6 +480,7 @@
 
           if (res.ok) {
             delete typedNotes[itemId]; // Clear stored note
+            delete tempCheckedItems[itemId]; // Clear temp checked state
             await loadTour(); // Refresh the list
           } else {
             alert("❌ Fehler beim Aktualisieren des Status");
@@ -470,6 +526,15 @@
         }
         loadTour();
       }, 30000);
+
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+            .catch(err => console.error('Service Worker registration failed:', err));
+        });
+      }
     </script>
   </body>
 </html>

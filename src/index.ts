@@ -40,6 +40,40 @@ app.get("/api/validate-customer", async (req, res) => {
   result.rows.length > 0 ? res.send("OK") : res.status(404).send("Not Found");
 });
 
+// Alle Bestellungen eines bestimmten Kundencodes abrufen
+app.get("/api/customer-orders", async (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).send("Kundencode fehlt");
+  }
+
+  try {
+    const queryText = `
+      SELECT 
+        o.id as order_id,
+        o.delivery_date,
+        o.created_at,
+        oi.id as item_id,
+        p.name as product_name,
+        oi.quantity,
+        oi.unit,
+        oi.status,
+        oi.driver_note
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      JOIN customers c ON o.customer_id = c.id
+      JOIN products p ON oi.product_id = p.id
+      WHERE c.customer_code = $1
+      ORDER BY o.created_at DESC, oi.id ASC;
+    `;
+    const result = await query(queryText, [code]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fehler beim Laden der Kundenbestellungen:", err);
+    res.status(500).json({ error: "Fehler beim Laden der Bestellungen" });
+  }
+});
+
 // Eine Bestellung speichern
 app.post("/api/orders", async (req, res) => {
   const { customer_code, items } = req.body; // items: [{product_id: 1, quantity: 5, unit: "kg"}, ...]
