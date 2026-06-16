@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IFCO-Kisten Tracker</title>
+    <!-- PWA Meta and Links -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#e95420" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/assets/icon.svg" />
+    
+    <!-- Google Fonts: Ubuntu & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #2c001e 0%, #5e2750 100%);
+        --accent-orange: #e95420;
+        --accent-orange-hover: #d63f1b;
+        --purple-dark: #2c001e;
+        --purple-light: #5e2750;
+        --card-bg: rgba(255, 255, 255, 0.08);
+        --card-border: rgba(255, 255, 255, 0.15);
+        --text-main: #f5f5f5;
+        --text-muted: #cccccc;
+        --success-color: #2ec4b6;
+        --warning-color: #ff9f1c;
+        --danger-color: #e71d36;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--primary-gradient);
+        color: var(--text-main);
+        font-family: 'Outfit', 'Ubuntu', sans-serif;
+        padding: 20px;
+        min-height: 100vh;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      /* Header area */
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid var(--card-border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      }
+
+      .header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #fff;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .header p {
+        font-size: 16px;
+        color: var(--text-muted);
+      }
+
+      .timestamp {
+        font-size: 14px;
+        color: var(--accent-orange);
+        margin-top: 8px;
+        font-weight: 600;
+      }
+
+      /* Navigation tabs */
+      .tabs {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .tab-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--card-border);
+        color: var(--text-muted);
+        padding: 12px 24px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+      }
+
+      .tab-btn.active {
+        background: var(--accent-orange);
+        color: white;
+        border-color: var(--accent-orange);
+        box-shadow: 0 4px 15px rgba(233, 84, 32, 0.4);
+      }
+
+      .tab-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      /* Tab content areas */
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Grid for layout */
+      .grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 20px;
+      }
+
+      @media (max-width: 900px) {
+        .grid-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Card styles */
+      .glass-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        margin-bottom: 20px;
+      }
+
+      .glass-card h2 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Form styling */
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 6px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        color: white;
+        font-size: 16px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: var(--accent-orange);
+        box-shadow: 0 0 0 3px rgba(233, 84, 32, 0.25);
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+      /* Buttons */
+      .btn {
+        width: 100%;
+        padding: 14px;
+        background: var(--accent-orange);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      }
+
+      .btn:hover {
+        background: var(--accent-orange-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(233, 84, 32, 0.3);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--card-border);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: none;
+      }
+
+      .btn-danger {
+        background: var(--danger-color);
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 6px;
+        width: auto;
+      }
+
+      .btn-danger:hover {
+        background: #bd1326;
+        box-shadow: 0 4px 12px rgba(231, 29, 54, 0.3);
+      }
+
+      /* Search & filter */
+      .search-box {
+        margin-bottom: 20px;
+      }
+
+      /* Balances List & badging */
+      .balances-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 5px;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .balance-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+      }
+
+      .balance-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--card-border);
+        transform: translateX(4px);
+      }
+
+      .company-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .company-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+      }
+
+      .company-code {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .balance-stats {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .crate-counts {
+        text-align: right;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .badge {
+        padding: 8px 14px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 16px;
+        min-width: 50px;
+        text-align: center;
+      }
+
+      .badge-neutral {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+
+      .badge-positive {
+        background: rgba(255, 159, 28, 0.2);
+        color: var(--warning-color);
+        border: 1px solid rgba(255, 159, 28, 0.4);
+      }
+
+      .badge-negative {
+        background: rgba(46, 196, 182, 0.2);
+        color: var(--success-color);
+        border: 1px solid rgba(46, 196, 182, 0.4);
+      }
+
+      /* History ledger styles */
+      .history-table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+
+      th, td {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      th {
+        font-weight: 600;
+        color: var(--accent-orange);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      td {
+        font-size: 15px;
+        color: var(--text-main);
+      }
+
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .action-col {
+        text-align: center;
+      }
+
+      /* Alert toast */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        display: none;
+        z-index: 1000;
+        font-weight: 500;
+        border-left: 4px solid var(--accent-orange);
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      .btn-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 25px;
+        gap: 15px;
+      }
+
+      .loading-text {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-muted);
+        font-size: 16px;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .tabs {
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .tab-btn {
+          width: 100%;
+        }
+
+        th, td {
+          padding: 10px 8px;
+          font-size: 13px;
+        }
+
+        .badge {
+          padding: 6px 10px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📦 IFCO-Kisten Tracker</h1>
+        <p>Kontostände und Transaktionsverlauf für Mehrwegkisten</p>
+        <div class="timestamp" id="live-date">...</div>
+      </div>
+
+      <!-- Wochenstatistik Übersicht -->
+      <div id="weekly-stats-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+        <div class="glass-card" style="margin-bottom: 0; padding: 15px; display: flex; align-items: center; gap: 15px;">
+          <div style="font-size: 32px; background: rgba(255, 159, 28, 0.2); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255, 159, 28, 0.4);">📥</div>
+          <div>
+            <div style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Woche: Bekommen</div>
+            <div id="weekly-delivered" style="font-size: 24px; font-weight: 700; color: var(--warning-color);">0</div>
+          </div>
+        </div>
+        <div class="glass-card" style="margin-bottom: 0; padding: 15px; display: flex; align-items: center; gap: 15px;">
+          <div style="font-size: 32px; background: rgba(46, 196, 182, 0.2); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(46, 196, 182, 0.4);">📤</div>
+          <div>
+            <div style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Woche: Abgegeben</div>
+            <div id="weekly-returned" style="font-size: 24px; font-weight: 700; color: var(--success-color);">0</div>
+          </div>
+        </div>
+        <div class="glass-card" style="margin-bottom: 0; padding: 15px; display: flex; align-items: center; gap: 15px;">
+          <div style="font-size: 32px; background: rgba(255, 255, 255, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.2);">📦</div>
+          <div>
+            <div style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Woche: Kontostand</div>
+            <div id="weekly-balance" style="font-size: 24px; font-weight: 700; color: white;">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info zur Wochenberechnung (B2 Level German) -->
+      <div style="font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); font-family: inherit;">
+        ℹ️ <strong>Hinweis zur Wochenstatistik:</strong> Die aktuelle Woche wird automatisch vom <strong>Montag (00:00 Uhr)</strong> bis zum <strong>Sonntag (23:59 Uhr)</strong> berechnet.
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('overview')">📊 Übersicht & Buchung</button>
+        <button class="tab-btn" onclick="switchTab('journal')">📖 Transaktionsverlauf</button>
+      </div>
+
+      <!-- Tab 1: Overview & Booking -->
+      <div id="tab-overview" class="tab-content active">
+        <div class="grid-layout">
+          <!-- Manual Booking Form -->
+          <div class="glass-card">
+            <h2>✍️ Kisten buchen</h2>
+            <form id="booking-form" onsubmit="handleBooking(event)">
+              <div class="form-group">
+                <label for="customer-select">Kunde / Firma</label>
+                <select id="customer-select" class="form-control" required>
+                  <option value="" disabled selected>Kunde auswählen...</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="delivered-count">Geliefert (bekommen)</label>
+                  <input type="number" id="delivered-count" class="form-control" min="0" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                  <label for="returned-count">Zurück (abgegeben)</label>
+                  <input type="number" id="returned-count" class="form-control" min="0" placeholder="0" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="booking-date">Datum</label>
+                <input type="date" id="booking-date" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label for="booking-notes">Notiz (optional)</label>
+                <input type="text" id="booking-notes" class="form-control" placeholder="z. B. Tour-Lieferung, Verlust..." maxlength="200">
+              </div>
+
+              <button type="submit" class="btn">💾 Transaktion buchen</button>
+            </form>
+          </div>
+
+          <!-- Balances Overview -->
+          <div class="glass-card">
+            <h2>📊 Kisten-Kontostände</h2>
+            <div class="search-box">
+              <input type="text" id="search-input" class="form-control" placeholder="🔎 Nach Kunde oder Code filtern..." oninput="filterBalances()">
+            </div>
+            
+            <div id="balances-list" class="balances-list">
+              <div class="loading-text">⏳ Daten werden geladen...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Journal -->
+      <div id="tab-journal" class="tab-content">
+        <div class="glass-card">
+          <h2>📖 Chronologischer Verlauf</h2>
+          <div class="history-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Kunde</th>
+                  <th style="text-align: center;">Bekommen (Geliefert)</th>
+                  <th style="text-align: center;">Abgegeben (Zurück)</th>
+                  <th>Notiz</th>
+                  <th class="action-col">Aktion</th>
+                </tr>
+              </thead>
+              <tbody id="history-rows">
+                <tr>
+                  <td colspan="6" class="loading-text">⏳ Journal wird geladen...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="btn-container">
+        <button class="btn btn-secondary" onclick="window.location.href='index.html'" style="width: auto;">🏢 Zum Dashboard</button>
+        <button class="btn btn-secondary" onclick="logout()" style="width: auto; background: var(--purple-light);">🚪 Abmelden</button>
+      </div>
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="toast">Nachricht</div>
+
+    <script>
+      // Security check: must be admin to access
+      if (localStorage.getItem("isAdmin") !== "true") {
+        window.location.href = "index.html";
+      }
+
+      // Set default date in picker to today (Berlin timezone equivalent)
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('booking-date').value = today;
+
+      // Format current date in German for header
+      function updateLiveDate() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const formatted = new Date().toLocaleDateString('de-DE', options);
+        document.getElementById('live-date').textContent = formatted;
+      }
+      updateLiveDate();
+
+      // Switch between tabs
+      function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        if (tabName === 'overview') {
+          document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+          document.getElementById('tab-overview').classList.add('active');
+          loadData(); // Reload balances and customers
+        } else if (tabName === 'journal') {
+          document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+          document.getElementById('tab-journal').classList.add('active');
+          loadHistory(); // Load ledger
+        }
+      }
+
+      // Show toast alerts
+      function showToast(message, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.style.borderLeftColor = isError ? 'var(--danger-color)' : 'var(--accent-orange)';
+        toast.style.display = 'block';
+        setTimeout(() => {
+          toast.style.display = 'none';
+        }, 3500);
+      }
+
+      let customersCache = [];
+      let balancesCache = [];
+
+      // Fetch weekly summary stats (delivered, returned, balance)
+      async function loadWeeklyStats() {
+        const adminKey = localStorage.getItem("adminKey") || "";
+        try {
+          const statsRes = await fetch("/api/crates/stats", {
+            headers: { "x-admin-key": adminKey }
+          });
+          if (statsRes.ok) {
+            const stats = await statsRes.json();
+            document.getElementById("weekly-delivered").textContent = stats.delivered_week || 0;
+            document.getElementById("weekly-returned").textContent = stats.returned_week || 0;
+            const bal = parseInt(stats.balance_week) || 0;
+            
+            const balEl = document.getElementById("weekly-balance");
+            balEl.textContent = (bal > 0 ? '+' : '') + bal;
+            if (bal > 0) {
+              balEl.style.color = "var(--warning-color)";
+            } else if (bal < 0) {
+              balEl.style.color = "var(--success-color)";
+            } else {
+              balEl.style.color = "white";
+            }
+          }
+        } catch (err) {
+          console.error("Fehler beim Laden der Wochenstatistik:", err);
+        }
+      }
+
+      // Fetch customers and crate balances summary
+      async function loadData() {
+        const adminKey = localStorage.getItem("adminKey") || "";
+        
+        try {
+          // 1. Fetch Customers for Form Select dropdown
+          const customersRes = await fetch("/api/customers", {
+            headers: { "x-admin-key": adminKey }
+          });
+          if (customersRes.ok) {
+            customersCache = await customersRes.json();
+            populateCustomerDropdown(customersCache);
+          }
+
+          // 2. Fetch Crate Balances
+          const summaryRes = await fetch("/api/crates/summary", {
+            headers: { "x-admin-key": adminKey }
+          });
+          if (!summaryRes.ok) throw new Error("Fehler beim Laden der Kisten-Übersicht");
+          
+          balancesCache = await summaryRes.json();
+          renderBalances(balancesCache);
+
+          // 3. Fetch Weekly Stats
+          await loadWeeklyStats();
+        } catch (error) {
+          console.error(error);
+          showToast(error.message, true);
+        }
+      }
+
+      function populateCustomerDropdown(customers) {
+        const select = document.getElementById("customer-select");
+        // Keep only first disabled option
+        select.innerHTML = '<option value="" disabled selected>Kunde auswählen...</option>';
+        customers.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = `${c.name} (${c.customer_code})`;
+          select.appendChild(opt);
+        });
+      }
+
+      function renderBalances(balances) {
+        const listDiv = document.getElementById("balances-list");
+        if (!balances || balances.length === 0) {
+          listDiv.innerHTML = '<div class="loading-text">📭 Keine Kundendaten vorhanden</div>';
+          return;
+        }
+
+        listDiv.innerHTML = balances.map(b => {
+          const balance = parseInt(b.current_balance);
+          let badgeClass = 'badge-neutral';
+          let balanceSign = '';
+          
+          if (balance > 0) {
+            badgeClass = 'badge-positive';
+            balanceSign = '+';
+          } else if (balance < 0) {
+            badgeClass = 'badge-negative';
+          }
+
+          return `
+            <div class="balance-card" data-name="${escapeHtml(b.name)}" data-code="${escapeHtml(b.customer_code)}">
+              <div class="company-info">
+                <span class="company-name">${escapeHtml(b.name)}</span>
+                <span class="company-code">Code: ${escapeHtml(b.customer_code)}</span>
+              </div>
+              <div class="balance-stats">
+                <div class="crate-counts">
+                  <div>📥 ${b.total_delivered} bekommen</div>
+                  <div>📤 ${b.total_returned} abgegeben</div>
+                </div>
+                <div class="badge ${badgeClass}">${balanceSign}${balance}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function filterBalances() {
+        const query = document.getElementById("search-input").value.toLowerCase().trim();
+        const cards = document.querySelectorAll(".balance-card");
+        
+        cards.forEach(card => {
+          const name = card.getAttribute("data-name").toLowerCase();
+          const code = card.getAttribute("data-code").toLowerCase();
+          
+          if (name.includes(query) || code.includes(query)) {
+            card.style.display = "flex";
+          } else {
+            card.style.display = "none";
+          }
+        });
+      }
+
+      // Handle form booking submission
+      async function handleBooking(event) {
+        event.preventDefault();
+        
+        const customerId = document.getElementById("customer-select").value;
+        const delivered = document.getElementById("delivered-count").value;
+        const returned = document.getElementById("returned-count").value;
+        const date = document.getElementById("booking-date").value;
+        const notes = document.getElementById("booking-notes").value;
+        const adminKey = localStorage.getItem("adminKey") || "";
+
+        try {
+          const res = await fetch("/api/crates/transactions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-key": adminKey
+            },
+            body: JSON.stringify({
+              customer_id: customerId,
+              delivered_quantity: delivered,
+              returned_quantity: returned,
+              delivery_date: date,
+              notes: notes
+            })
+          });
+
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "Buchen fehlgeschlagen");
+          }
+
+          showToast("Kisten-Transaktion erfolgreich gebucht!");
+          
+          // Reset form fields (except date)
+          document.getElementById("customer-select").value = "";
+          document.getElementById("delivered-count").value = "";
+          document.getElementById("returned-count").value = "";
+          document.getElementById("booking-notes").value = "";
+          
+          // Reload overview
+          loadData();
+        } catch (error) {
+          console.error(error);
+          showToast(error.message, true);
+        }
+      }
+
+      // Fetch transaction history (Journal)
+      async function loadHistory() {
+        const rows = document.getElementById("history-rows");
+        rows.innerHTML = '<tr><td colspan="6" class="loading-text">⏳ Journal wird geladen...</td></tr>';
+        
+        const adminKey = localStorage.getItem("adminKey") || "";
+
+        try {
+          const res = await fetch("/api/crates/history", {
+            headers: { "x-admin-key": adminKey }
+          });
+          if (!res.ok) throw new Error("Fehler beim Laden des Journals");
+
+          const data = await res.json();
+          if (!data || data.length === 0) {
+            rows.innerHTML = '<tr><td colspan="6" class="loading-text">📭 Keine Transaktionen eingetragen</td></tr>';
+            return;
+          }
+
+          rows.innerHTML = data.map(item => {
+            const formattedDate = formatDateString(item.delivery_date);
+            return `
+              <tr id="row-${item.id}">
+                <td style="font-weight: 500;">${formattedDate}</td>
+                <td><strong>${escapeHtml(item.customer_name)}</strong></td>
+                <td style="text-align: center; color: var(--warning-color); font-weight: bold;">+${item.delivered_quantity}</td>
+                <td style="text-align: center; color: var(--success-color); font-weight: bold;">-${item.returned_quantity}</td>
+                <td style="color: var(--text-muted); font-size: 14px;">${escapeHtml(item.notes || '-')}</td>
+                <td class="action-col">
+                  <button class="btn btn-danger" onclick="deleteTransaction(${item.id})">🗑️ Löschen</button>
+                </td>
+              </tr>
+            `;
+          }).join("");
+        } catch (error) {
+          console.error(error);
+          showToast(error.message, true);
+        }
+      }
+
+      // Delete a transaction entry
+      async function deleteTransaction(id) {
+        if (!confirm("Möchten Sie diese Transaktion wirklich löschen? Der Kontostand wird angepasst.")) {
+          return;
+        }
+
+        const adminKey = localStorage.getItem("adminKey") || "";
+        try {
+          const res = await fetch(`/api/crates/transactions/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-key": adminKey }
+          });
+
+          if (!res.ok) throw new Error("Fehler beim Löschen");
+          
+          showToast("Transaktion gelöscht.");
+          // Remove row from UI
+          const row = document.getElementById(`row-${id}`);
+          if (row) row.remove();
+          
+          // Refresh weekly stats
+          await loadWeeklyStats();
+          
+          // If no rows left, reload history tab
+          const tbody = document.getElementById("history-rows");
+          if (tbody.children.length === 0) {
+            loadHistory();
+          }
+        } catch (error) {
+          console.error(error);
+          showToast(error.message, true);
+        }
+      }
+
+      // Helper: Format date from database (YYYY-MM-DD) into German verbal representation
+      // e.g. "2026-06-16" -> "16. Juni 2026 Dienstag"
+      function formatDateString(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        // Avoid timezone shift errors by constructing date from YYYY, MM, DD parts
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          const testDate = new Date(parts[0], parts[1] - 1, parts[2]);
+          const options = { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' };
+          // E.g. "16. Juni 2026 Dienstag"
+          const localeStr = testDate.toLocaleDateString('de-DE', options);
+          return localeStr;
+        }
+        return dateStr;
+      }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function logout() {
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("adminKey");
+        window.location.href = "scan.html";
+      }
+
+      // Load on start
+      loadData();
+    </script>
+  </body>
+</html>

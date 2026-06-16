@@ -337,6 +337,123 @@ app.patch("/api/customers/:id", adminOnly, async (req, res) => {
   }
 });
 
+// --- IFCO-Kisten Tracking Endpunkte ---
+
+// 0. Kisten-Statistiken (aktuelle Woche) abrufen
+app.get("/api/crates/stats", adminOnly, async (req, res) => {
+  try {
+    const queryText = `
+      SELECT 
+        COALESCE(SUM(delivered_quantity), 0)::integer as delivered_week,
+        COALESCE(SUM(returned_quantity), 0)::integer as returned_week,
+        (COALESCE(SUM(delivered_quantity), 0) - COALESCE(SUM(returned_quantity), 0))::integer as balance_week
+      FROM crate_transactions
+      WHERE delivery_date >= DATE_TRUNC('week', CURRENT_DATE)
+        AND delivery_date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '1 week';
+    `;
+    const result = await query(queryText);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Fehler beim Laden der Kisten-Statistiken:", err);
+    res.status(500).json({ error: "Fehler beim Laden der Kisten-Statistiken" });
+  }
+});
+
+// 1. Übersicht der Kisten-Salden pro Kunde abrufen
+app.get("/api/crates/summary", adminOnly, async (req, res) => {
+  try {
+    const queryText = `
+      SELECT 
+        c.id, 
+        c.name, 
+        c.customer_code,
+        COALESCE(SUM(ct.delivered_quantity), 0)::integer as total_delivered,
+        COALESCE(SUM(ct.returned_quantity), 0)::integer as total_returned,
+        (COALESCE(SUM(ct.delivered_quantity), 0) - COALESCE(SUM(ct.returned_quantity), 0))::integer as current_balance
+      FROM customers c
+      LEFT JOIN crate_transactions ct ON c.id = ct.customer_id
+      GROUP BY c.id, c.name, c.customer_code
+      ORDER BY c.name ASC;
+    `;
+    const result = await query(queryText);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fehler beim Laden der Kisten-Übersicht:", err);
+    res.status(500).json({ error: "Fehler beim Laden der Kisten-Übersicht" });
+  }
+});
+
+// 2. Transaktionsverlauf (Journal) abrufen
+app.get("/api/crates/history", adminOnly, async (req, res) => {
+  try {
+    const queryText = `
+      SELECT 
+        ct.id,
+        ct.customer_id,
+        c.name as customer_name,
+        ct.delivery_date::text as delivery_date,
+        ct.delivered_quantity::integer as delivered_quantity,
+        ct.returned_quantity::integer as returned_quantity,
+        ct.notes,
+        ct.created_at
+      FROM crate_transactions ct
+      JOIN customers c ON ct.customer_id = c.id
+      ORDER BY ct.delivery_date DESC, ct.created_at DESC;
+    `;
+    const result = await query(queryText);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fehler beim Laden des Kisten-Verlaufs:", err);
+    res.status(500).json({ error: "Fehler beim Laden des Kisten-Verlaufs" });
+  }
+});
+
+// 3. Neue Transaktion buchen
+app.post("/api/crates/transactions", adminOnly, async (req, res) => {
+  const { customer_id, delivered_quantity, returned_quantity, delivery_date, notes } = req.body;
+  if (!customer_id) {
+    return res.status(400).json({ error: "Kunden-ID ist ein Pflichtfeld!" });
+  }
+
+  const delivered = parseInt(delivered_quantity as string) || 0;
+  const returned = parseInt(returned_quantity as string) || 0;
+  const date = delivery_date || new Date().toISOString().split('T')[0];
+
+  try {
+    const queryText = `
+      INSERT INTO crate_transactions (customer_id, delivered_quantity, returned_quantity, delivery_date, notes)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *;
+    `;
+    const result = await query(queryText, [
+      parseInt(customer_id as string),
+      delivered,
+      returned,
+      date,
+      notes ? notes.trim() : null
+    ]);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Fehler beim Speichern der Kisten-Transaktion:", err);
+    res.status(500).json({ error: "Fehler beim Speichern der Kisten-Transaktion" });
+  }
+});
+
+// 4. Transaktion löschen
+app.delete("/api/crates/transactions/:id", adminOnly, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await query("DELETE FROM crate_transactions WHERE id = $1 RETURNING *;", [parseInt(id as string)]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Transaktion nicht gefunden" });
+    }
+    res.json({ message: "Transaktion erfolgreich gelöscht" });
+  } catch (err) {
+    console.error("Fehler beim Löschen der Kisten-Transaktion:", err);
+    res.status(500).json({ error: "Fehler beim Löschen der Kisten-Transaktion" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server läuft auf Port ${port}`);
 });
