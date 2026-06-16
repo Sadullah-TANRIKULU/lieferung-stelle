@@ -120,6 +120,7 @@
                 if (res.ok) {
                     localStorage.setItem("isAdmin", "true");
                     localStorage.setItem("adminKey", password);
+                    localStorage.setItem("adminLoginTime", Date.now().toString());
                     window.location.href = "index.html";
                 } else {
                     alert("❌ Falsches Passwort");

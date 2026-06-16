@@ -173,9 +173,16 @@
   </div>
 
   <script>
-    // Wenn der Admin-Status nicht gesetzt ist, sofort rauswerfen
-    if (localStorage.getItem("isAdmin") !== "true") {
-      alert("❌ Zugriff verweigert! Nur für Logistik-Personal.");
+    // Wenn der Admin-Status nicht gesetzt oder die Sitzung abgelaufen (>36h) ist, sofort rauswerfen
+    const adminLoginTime = localStorage.getItem("adminLoginTime");
+    const THIRTY_SIX_HOURS = 36 * 60 * 60 * 1000;
+    const adminSessionExpired = adminLoginTime && (Date.now() - parseInt(adminLoginTime) > THIRTY_SIX_HOURS);
+
+    if (localStorage.getItem("isAdmin") !== "true" || !adminLoginTime || adminSessionExpired) {
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("adminKey");
+      localStorage.removeItem("adminLoginTime");
+      alert("❌ Zugriff verweigert oder Sitzung abgelaufen (max. 36 Std.)! Bitte neu anmelden.");
       window.location.href = "scan.html";
     }
 

@@ -521,16 +521,23 @@
 
       if (code) {
         localStorage.setItem("customerCode", code);
+        localStorage.setItem("customerLoginTime", Date.now().toString());
       } else {
         code = localStorage.getItem("customerCode");
       }
 
       document.addEventListener("DOMContentLoaded", () => {
-        if (!code) {
+        const customerLoginTime = localStorage.getItem("customerLoginTime");
+        const THIRTY_SIX_HOURS = 36 * 60 * 60 * 1000;
+        const customerSessionExpired = customerLoginTime && (Date.now() - parseInt(customerLoginTime) > THIRTY_SIX_HOURS);
+
+        if (!code || customerSessionExpired) {
+          localStorage.removeItem("customerCode");
+          localStorage.removeItem("customerLoginTime");
           document.body.innerHTML = `
             <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px;">
-              <h1 style="font-size: 28px; color: #2c001e; margin-bottom: 20px;">📱 QR-Code erforderlich</h1>
-              <p style="font-size: 20px; color: #666;">Bitte scannen Sie den QR-Code, um Ihre Bestellung zu starten.</p>
+              <h1 style="font-size: 28px; color: #2c001e; margin-bottom: 20px;">📱 QR-Code erforderlich / Sitzung abgelaufen</h1>
+              <p style="font-size: 20px; color: #666;">Bitte scannen Sie den QR-Code erneut, um Ihre Bestellung zu starten.</p>
             </div>
           `;
         } else {
@@ -775,6 +782,7 @@
 
       function logout() {
         localStorage.removeItem("customerCode");
+        localStorage.removeItem("customerLoginTime");
         window.location.href = "scan.html";
       }
 

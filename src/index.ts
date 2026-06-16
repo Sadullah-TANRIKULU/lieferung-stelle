@@ -15,24 +15,54 @@ app.use(express.static("public"));
 
 const adminOnly = (req: Request, res: Response, next: Function) => {
   const auth = req.headers["x-admin-key"]; // Der Admin schickt einen geheimen Key im Header
-  if (auth === process.env.ADMIN_SECRET) {
+  const secret = process.env.ADMIN_SECRET;
+  if (secret && typeof secret === "string" && secret.trim() !== "" && auth === secret) {
     next();
   } else {
     res.status(403).send("Zugriff verweigert");
   }
 };
 
-app.get("/api/test-db", async (req, res) => {
-  try {
-    const result = await query("SELECT * FROM customers");
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: "Datenbankabfrage fehlgeschlagen" });
-  }
-});
+// Validation helpers
+const isValidInt = (val: any): boolean => {
+  if (val === undefined || val === null) return false;
+  const num = Number(val);
+  return Number.isInteger(num) && num > 0;
+};
+
+const isValidQuantity = (val: any): boolean => {
+  if (val === undefined || val === null) return false;
+  const num = Number(val);
+  return !isNaN(num) && isFinite(num) && num > 0 && num <= 300;
+};
+
+const isValidString = (val: any, minLen = 1, maxLen = 255): boolean => {
+  if (typeof val !== "string") return false;
+  const trimmed = val.trim();
+  return trimmed.length >= minLen && trimmed.length <= maxLen;
+};
+
+const isValidCustomerCode = (val: any): boolean => {
+  if (!isValidString(val, 1, 20)) return false;
+  // Alphanumeric, hyphen, underscore
+  return /^[a-zA-Z0-9\-_]+$/.test(val.trim());
+};
+
+const isValidStatus = (val: any): boolean => {
+  return val === "delivered" || val === "refused" || val === "open";
+};
+
+const isValidDate = (val: any): boolean => {
+  if (!isValidString(val, 10, 10)) return false;
+  // YYYY-MM-DD
+  return /^\d{4}-\d{2}-\d{2}$/.test(val);
+};
 
 app.get("/api/validate-customer", async (req, res) => {
   const { code } = req.query;
+  if (!isValidCustomerCode(code)) {
+    return res.status(400).send("Ungültiger Kundencode");
+  }
   const result = await query(
     "SELECT id FROM customers WHERE customer_code = $1",
     [code],
@@ -43,8 +73,8 @@ app.get("/api/validate-customer", async (req, res) => {
 // Alle Bestellungen eines bestimmten Kundencodes abrufen
 app.get("/api/customer-orders", async (req, res) => {
   const { code } = req.query;
-  if (!code) {
-    return res.status(400).send("Kundencode fehlt");
+  if (!isValidCustomerCode(code)) {
+    return res.status(400).send("Ungültiger Kundencode");
   }
 
   try {
@@ -80,6 +110,21 @@ app.post("/api/orders", async (req, res) => {
 
   console.log("Daten vom Frontend erhalten:", req.body);
 
+  if (!isValidCustomerCode(customer_code)) {
+    return res.status(400).send("Ungültiger Kundencode");
+  }
+  if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
+    return res.status(400).send("Ungültige Artikel-Liste");
+  }
+  for (const item of items) {
+    if (!item || !isValidInt(item.product_id) || !isValidQuantity(item.quantity)) {
+      return res.status(400).send("Ungültiges Produkt oder Menge");
+    }
+    if (item.unit !== undefined && !isValidString(item.unit, 1, 20)) {
+      return res.status(400).send("Ungültige Einheit");
+    }
+  }
+
   try {
     // 1. Kunden-ID anhand des Codes finden
     const customer = await query(
@@ -99,7 +144,7 @@ app.post("/api/orders", async (req, res) => {
     // 3. Positionen einfügen (mit Einheit)
     for (const item of items) {
       // Try to use unit if provided, otherwise fallback to just quantity
-      const unit = item.unit || "Stück";
+      const unit = item.unit ? item.unit.trim() : "Stück";
       const quantity = parseFloat(item.quantity);
       
       // Check if order_items has a unit column, if not store in quantity as string representation
@@ -135,11 +180,21 @@ app.patch("/api/update-status/:item_id", adminOnly, async (req, res) => {
   const { item_id } = req.params;
   const { status, driver_note } = req.body; // Erwartet 'delivered' oder 'refused' und optionalen driver_note
 
+  if (!isValidInt(item_id)) {
+    return res.status(400).json({ error: "Ungültige Artikel-ID" });
+  }
+  if (!isValidStatus(status)) {
+    return res.status(400).json({ error: "Ungültiger Status. Erwartet 'delivered', 'refused' oder 'open'." });
+  }
+  if (driver_note !== undefined && driver_note !== null && !isValidString(driver_note, 0, 500)) {
+    return res.status(400).json({ error: "Fahrernotiz ist zu lang (max. 500 Zeichen)" });
+  }
+
   try {
     await query("UPDATE order_items SET status = $1, driver_note = $2 WHERE id = $3", [
       status,
       driver_note ? driver_note.trim() : null,
-      item_id,
+      parseInt(item_id as string),
     ]);
     res.json({ message: "Status aktualisiert" });
   } catch (err) {
@@ -222,10 +277,22 @@ app.get("/api/loading-summary", adminOnly, async (req, res) => {
 // Produkt hinzufügen
 app.post("/api/products", adminOnly, async (req, res) => {
   const { name, unit, image_url } = req.body; // image_url hier hinzufügen
+  if (!isValidString(name, 1, 100)) {
+    return res.status(400).json({ error: "Name ist erforderlich (max. 100 Zeichen)" });
+  }
+  if (!isValidString(unit, 1, 100)) {
+    return res.status(400).json({ error: "Einheit ist erforderlich (max. 100 Zeichen)" });
+  }
+  if (image_url !== undefined && image_url !== null && image_url !== "") {
+    if (!isValidString(image_url, 1, 255)) {
+      return res.status(400).json({ error: "Ungültiger Bildpfad" });
+    }
+  }
+
   try {
     await query(
       "INSERT INTO products (name, unit, image_url) VALUES ($1, $2, $3)",
-      [name, unit, image_url],
+      [name.trim(), unit.trim(), image_url ? image_url.trim() : null],
     );
     res.status(201).json({ message: "Produkt mit Bild hinzugefügt" });
   } catch (err) {
@@ -237,14 +304,25 @@ app.post("/api/products", adminOnly, async (req, res) => {
 app.patch("/api/products/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
   const { name, unit, image_url } = req.body;
-  if (!name || !unit) {
-    return res.status(400).json({ error: "Name und Einheit sind Pflichtfelder!" });
+  if (!isValidInt(id)) {
+    return res.status(400).json({ error: "Ungültige Produkt-ID" });
+  }
+  if (!isValidString(name, 1, 100)) {
+    return res.status(400).json({ error: "Name ist erforderlich (max. 100 Zeichen)" });
+  }
+  if (!isValidString(unit, 1, 100)) {
+    return res.status(400).json({ error: "Einheit ist erforderlich (max. 100 Zeichen)" });
+  }
+  if (image_url !== undefined && image_url !== null && image_url !== "") {
+    if (!isValidString(image_url, 1, 255)) {
+      return res.status(400).json({ error: "Ungültiger Bildpfad" });
+    }
   }
 
   try {
     const result = await query(
       "UPDATE products SET name = $1, unit = $2, image_url = $3 WHERE id = $4 RETURNING *;",
-      [name, unit, image_url, parseInt(id as string)]
+      [name.trim(), unit.trim(), image_url ? image_url.trim() : null, parseInt(id as string)]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Produkt nicht gefunden" });
@@ -292,14 +370,22 @@ app.get("/api/customers", adminOnly, async (req, res) => {
 // Neuen Kunden anlegen
 app.post("/api/customers", adminOnly, async (req, res) => {
   const { name, customer_code, address } = req.body;
-  if (!name || !customer_code) {
-    return res.status(400).json({ error: "Name und Kundencode sind Pflichtfelder!" });
+  if (!isValidString(name, 1, 100)) {
+    return res.status(400).json({ error: "Name ist erforderlich (max. 100 Zeichen)" });
+  }
+  if (!isValidCustomerCode(customer_code)) {
+    return res.status(400).json({ error: "Ungültiger Kundencode (1-20 Zeichen, Alphanumerisch/Hyphen)" });
+  }
+  if (address !== undefined && address !== null && address !== "") {
+    if (!isValidString(address, 1, 255)) {
+      return res.status(400).json({ error: "Adresse ist ungültig (max. 255 Zeichen)" });
+    }
   }
 
   try {
     const result = await query(
       "INSERT INTO customers (name, customer_code, address) VALUES ($1, $2, $3) RETURNING *;",
-      [name, customer_code.trim(), address ? address.trim() : null]
+      [name.trim(), customer_code.trim(), address ? address.trim() : null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err: any) {
@@ -315,14 +401,25 @@ app.post("/api/customers", adminOnly, async (req, res) => {
 app.patch("/api/customers/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
   const { name, customer_code, address } = req.body;
-  if (!name || !customer_code) {
-    return res.status(400).json({ error: "Name und Kundencode sind Pflichtfelder!" });
+  if (!isValidInt(id)) {
+    return res.status(400).json({ error: "Ungültige Kunden-ID" });
+  }
+  if (!isValidString(name, 1, 100)) {
+    return res.status(400).json({ error: "Name ist erforderlich (max. 100 Zeichen)" });
+  }
+  if (!isValidCustomerCode(customer_code)) {
+    return res.status(400).json({ error: "Ungültiger Kundencode (1-20 Zeichen, Alphanumerisch/Hyphen)" });
+  }
+  if (address !== undefined && address !== null && address !== "") {
+    if (!isValidString(address, 1, 255)) {
+      return res.status(400).json({ error: "Adresse ist ungültig (max. 255 Zeichen)" });
+    }
   }
 
   try {
     const result = await query(
       "UPDATE customers SET name = $1, customer_code = $2, address = $3 WHERE id = $4 RETURNING *;",
-      [name, customer_code.trim(), address ? address.trim() : null, parseInt(id as string)]
+      [name.trim(), customer_code.trim(), address ? address.trim() : null, parseInt(id as string)]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Kunde nicht gefunden" });
@@ -411,8 +508,22 @@ app.get("/api/crates/history", adminOnly, async (req, res) => {
 // 3. Neue Transaktion buchen
 app.post("/api/crates/transactions", adminOnly, async (req, res) => {
   const { customer_id, delivered_quantity, returned_quantity, delivery_date, notes } = req.body;
-  if (!customer_id) {
-    return res.status(400).json({ error: "Kunden-ID ist ein Pflichtfeld!" });
+  if (!isValidInt(customer_id)) {
+    return res.status(400).json({ error: "Ungültige Kunden-ID" });
+  }
+  if (delivered_quantity !== undefined && (isNaN(Number(delivered_quantity)) || Number(delivered_quantity) < 0)) {
+    return res.status(400).json({ error: "Gelieferte Menge muss eine positive Zahl sein" });
+  }
+  if (returned_quantity !== undefined && (isNaN(Number(returned_quantity)) || Number(returned_quantity) < 0)) {
+    return res.status(400).json({ error: "Zurückgegebene Menge muss eine positive Zahl sein" });
+  }
+  if (delivery_date !== undefined && delivery_date !== null && !isValidDate(delivery_date)) {
+    return res.status(400).json({ error: "Lieferdatum muss das Format YYYY-MM-DD haben" });
+  }
+  if (notes !== undefined && notes !== null && notes !== "") {
+    if (!isValidString(notes, 1, 500)) {
+      return res.status(400).json({ error: "Notiz ist ungültig (max. 500 Zeichen)" });
+    }
   }
 
   const delivered = parseInt(delivered_quantity as string) || 0;
@@ -442,6 +553,9 @@ app.post("/api/crates/transactions", adminOnly, async (req, res) => {
 // 4. Transaktion löschen
 app.delete("/api/crates/transactions/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
+  if (!isValidInt(id)) {
+    return res.status(400).json({ error: "Ungültige Transaktions-ID" });
+  }
   try {
     const result = await query("DELETE FROM crate_transactions WHERE id = $1 RETURNING *;", [parseInt(id as string)]);
     if (result.rows.length === 0) {

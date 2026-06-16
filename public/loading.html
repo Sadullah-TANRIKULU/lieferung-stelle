@@ -225,8 +225,15 @@
 
     <script>
       // Security check
-      if (localStorage.getItem("isAdmin") !== "true") {
-        window.location.href = "index.html";
+      const adminLoginTime = localStorage.getItem("adminLoginTime");
+      const THIRTY_SIX_HOURS = 36 * 60 * 60 * 1000;
+      const adminSessionExpired = adminLoginTime && (Date.now() - parseInt(adminLoginTime) > THIRTY_SIX_HOURS);
+
+      if (localStorage.getItem("isAdmin") !== "true" || !adminLoginTime || adminSessionExpired) {
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("adminKey");
+        localStorage.removeItem("adminLoginTime");
+        window.location.href = "scan.html";
       }
 
       async function loadSummary() {
