@@ -468,6 +468,112 @@
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
+
+      /* Info Banner styling */
+      .info-banner {
+        background: #fdf5f2;
+        color: #2c001e;
+        border: 1px solid #f5d6cb;
+        border-left: 5px solid #e95420;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(233, 84, 32, 0.05);
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      .info-icon {
+        font-size: 24px;
+        color: #e95420;
+        line-height: 1;
+        margin-top: 2px;
+      }
+
+      .info-text {
+        flex: 1;
+      }
+
+      .info-text p {
+        margin: 0;
+      }
+
+      .info-text p:first-child {
+        font-weight: bold;
+        color: #e95420;
+        margin-bottom: 4px;
+      }
+
+      .info-text .sub-text {
+        font-size: 14px;
+        opacity: 0.8;
+        margin-top: 4px;
+        border-top: 1px dashed rgba(233, 84, 32, 0.2);
+        padding-top: 4px;
+      }
+
+      /* Contact & Bank Details styling */
+      .contact-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-top: 40px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #eee;
+        border-top: 4px solid #5e2750;
+      }
+
+      .contact-card h3 {
+        font-size: 20px;
+        color: #2c001e;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f4f4f4;
+        padding-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+      }
+
+      .contact-section {
+        font-size: 15px;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      .contact-section strong {
+        color: #2c001e;
+        font-size: 16px;
+      }
+
+      .contact-section a {
+        color: #e95420;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      .contact-section a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .contact-card {
+          padding: 20px;
+          margin-top: 30px;
+        }
+        .contact-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -475,6 +581,19 @@
       <h1>🛒 Bestellung</h1>
       <div class="customer-info">
         Kunde: <span class="customer-code" id="customerDisplay">Lädt...</span>
+      </div>
+    </div>
+
+    <div class="info-banner">
+      <div class="info-icon">ℹ️</div>
+      <div class="info-text">
+        <p>Wichtiger Lieferhinweis / Important Delivery Note</p>
+        <div>
+          Standard-Lieferzeit bis spätestens <strong>12:00 Uhr</strong> an Liefertagen, andernfalls müssen Sie den Anbieter telefonisch kontaktieren.
+        </div>
+        <div class="sub-text">
+          "Standard delivery time at most at 12.00 o'clock in lieferung days, otherwise you need to call the provider per phone"
+        </div>
       </div>
     </div>
 
@@ -514,6 +633,28 @@
       </div>
     </div>
 
+    <!-- Contact & Bank Details -->
+    <div class="contact-card">
+      <h3>📞 Kontakt & Zahlungsdaten / Contact & Payment Details</h3>
+      <div class="contact-grid">
+        <div class="contact-section">
+          <strong>Anbieter / Provider:</strong><br>
+          N&Z Swiss Food AG<br>
+          Canton Zug, Switzerland
+        </div>
+        <div class="contact-section">
+          <strong>Kontakt & Support:</strong><br>
+          ✉️ <a href="mailto:sadullahtanrikulu@hotmail.com">sadullahtanrikulu@hotmail.com</a><br>
+          📞 <a href="tel:+41783150711">+41 78 315 07 11</a> (Support & IT)
+        </div>
+        <div class="contact-section">
+          <strong>Bankverbindung / Bank Account:</strong><br>
+          IBAN: <strong style="font-family: monospace; letter-spacing: 0.5px; color: #e95420;">CH93 0900 0000 1234 5678 9</strong><br>
+          BIC/SWIFT: <span style="font-family: monospace;">XXXXXXXXXXX</span> (TBD)
+        </div>
+      </div>
+    </div>
+
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       let code = urlParams.get("code");
@@ -535,9 +676,16 @@
           localStorage.removeItem("customerCode");
           localStorage.removeItem("customerLoginTime");
           document.body.innerHTML = `
-            <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px;">
+            <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px; max-width: 600px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
               <h1 style="font-size: 28px; color: #2c001e; margin-bottom: 20px;">📱 QR-Code erforderlich / Sitzung abgelaufen</h1>
-              <p style="font-size: 20px; color: #666;">Bitte scannen Sie den QR-Code erneut, um Ihre Bestellung zu starten.</p>
+              <p style="font-size: 20px; color: #666; margin-bottom: 30px;">Bitte scannen Sie den QR-Code erneut, um Ihre Bestellung zu starten.</p>
+              <div style="background: #fdf5f2; color: #2c001e; border: 1px solid #f5d6cb; border-left: 5px solid #e95420; padding: 15px; border-radius: 8px; text-align: left; font-size: 15px; line-height: 1.5;">
+                <strong style="color: #e95420; display: block; margin-bottom: 5px;">ℹ️ Lieferhinweis / Delivery Note:</strong>
+                Standard-Lieferzeit bis spätestens <strong>12:00 Uhr</strong> an Liefertagen, andernfalls müssen Sie den Anbieter telefonisch kontaktieren.
+                <div style="font-size: 13px; opacity: 0.8; margin-top: 6px; border-top: 1px dashed rgba(233, 84, 32, 0.2); padding-top: 6px; font-style: italic;">
+                  "Standard delivery time at most at 12.00 o'clock in lieferung days, otherwise you need to call the provider per phone"
+                </div>
+              </div>
             </div>
           `;
         } else {
@@ -551,9 +699,16 @@
           const valRes = await fetch(`/api/validate-customer?code=${code}`);
           if (!valRes.ok) {
             document.body.innerHTML = `
-              <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px;">
-                <h1 style="color: #d9534f;">❌ Zugriff verweigert!</h1>
-                <p>Kundencode ungültig.</p>
+              <div style="background: white; padding: 40px; text-align: center; border-radius: 12px; margin-top: 40px; max-width: 600px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <h1 style="color: #d9534f; font-size: 28px; margin-bottom: 20px;">❌ Zugriff verweigert!</h1>
+                <p style="font-size: 20px; color: #666; margin-bottom: 30px;">Kundencode ungültig.</p>
+                <div style="background: #fdf5f2; color: #2c001e; border: 1px solid #f5d6cb; border-left: 5px solid #e95420; padding: 15px; border-radius: 8px; text-align: left; font-size: 15px; line-height: 1.5;">
+                  <strong style="color: #e95420; display: block; margin-bottom: 5px;">ℹ️ Lieferhinweis / Delivery Note:</strong>
+                  Standard-Lieferzeit bis spätestens <strong>12:00 Uhr</strong> an Liefertagen, andernfalls müssen Sie den Anbieter telefonisch kontaktieren.
+                  <div style="font-size: 13px; opacity: 0.8; margin-top: 6px; border-top: 1px dashed rgba(233, 84, 32, 0.2); padding-top: 6px; font-style: italic;">
+                    "Standard delivery time at most at 12.00 o'clock in lieferung days, otherwise you need to call the provider per phone"
+                  </div>
+                </div>
               </div>
             `;
             return;

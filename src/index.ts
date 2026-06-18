@@ -217,7 +217,7 @@ app.get("/api/delivery-tour", adminOnly, async (req, res) => {
       JOIN orders o ON oi.order_id = o.id
       JOIN customers c ON o.customer_id = c.id
       JOIN products p ON oi.product_id = p.id
-      WHERE o.delivery_date = CURRENT_DATE
+      WHERE o.delivery_date = CURRENT_DATE OR (oi.status = 'open' AND o.delivery_date < CURRENT_DATE)
       ORDER BY o.created_at DESC;
     `;
     const result = await query(queryText);
@@ -263,7 +263,7 @@ app.get("/api/loading-summary", adminOnly, async (req, res) => {
       JOIN orders o ON oi.order_id = o.id
       JOIN customers c ON o.customer_id = c.id
       JOIN products p ON oi.product_id = p.id
-      WHERE o.delivery_date = CURRENT_DATE
+      WHERE o.delivery_date = CURRENT_DATE OR (oi.status = 'open' AND o.delivery_date < CURRENT_DATE)
       GROUP BY c.name, p.name, oi.unit
       ORDER BY c.name, p.name;
     `;

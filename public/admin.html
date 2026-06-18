@@ -446,12 +446,16 @@
 
         <div class="form-group">
           <label for="custCode">Kundencode (eindeutig)</label>
-          <input 
-            id="custCode" 
-            type="text"
-            placeholder="z.B. MUE-01, SCH-02..." 
-            onkeypress="if(event.key==='Enter') saveCustomer()"
-          />
+          <div style="display: flex; gap: 10px;">
+            <input 
+              id="custCode" 
+              type="text"
+              placeholder="z.B. BOOM-87fGH21-yT5..." 
+              onkeypress="if(event.key==='Enter') saveCustomer()"
+              style="flex: 1;"
+            />
+            <button type="button" onclick="autoGenerateCode()" style="margin-top: 0; padding: 0 15px; font-size: 14px; width: auto; background: #2c001e; white-space: nowrap;">⚡ Generieren</button>
+          </div>
         </div>
 
         <div class="form-group">
@@ -498,7 +502,6 @@
     </div>
 
     <script>
-      // Security check
       const adminLoginTime = localStorage.getItem("adminLoginTime");
       const THIRTY_SIX_HOURS = 36 * 60 * 60 * 1000;
       const adminSessionExpired = adminLoginTime && (Date.now() - parseInt(adminLoginTime) > THIRTY_SIX_HOURS);
@@ -512,6 +515,17 @@
         loadAssets();
         loadProducts();
         loadCustomers();
+        
+        // Suggest a secure code when customer name input loses focus
+        document.getElementById("custName").addEventListener("blur", (e) => {
+          const codeInput = document.getElementById("custCode");
+          if (editCustomerId === null && !codeInput.value) {
+            const name = e.target.value.trim();
+            if (name) {
+              codeInput.value = generateCustomerCodeFormat(name);
+            }
+          }
+        });
       }
 
       // Tab switching
@@ -982,6 +996,11 @@
           return;
         }
 
+        if (editCustomerId === null && !/^[A-Z]{4}-[a-zA-Z0-9-]{11}$/.test(customer_code)) {
+          showCustomerMessage("❌ Bitte verwenden Sie das sichere Format (z.B. BOOM-87fGH21-yT5). Klicken Sie auf 'Generieren'.", "error");
+          return;
+        }
+
         const adminKey = localStorage.getItem("adminKey") || "";
         const url = editCustomerId !== null ? `/api/customers/${editCustomerId}` : "/api/customers";
         const method = editCustomerId !== null ? "PATCH" : "POST";
@@ -1083,6 +1102,34 @@
         }).catch(err => {
           console.error("Fehler beim Kopieren:", err);
         });
+      }
+
+      function generateCustomerCodeFormat(companyName) {
+        if (!companyName) return "";
+        // Normalize accents (ä -> a, é -> e, etc.) and keep alphanumeric
+        let normalized = companyName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        let sanitized = normalized.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        while (sanitized.length < 4) {
+          sanitized += "X";
+        }
+        const prefix = sanitized.substring(0, 4);
+        
+        const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
+        let randomPart = "";
+        for (let i = 0; i < 11; i++) {
+          const randomIndex = Math.floor(Math.random() * charset.length);
+          randomPart += charset.charAt(randomIndex);
+        }
+        return `${prefix}-${randomPart}`;
+      }
+
+      function autoGenerateCode() {
+        const name = document.getElementById("custName").value.trim();
+        if (!name) {
+          alert("Bitte geben Sie zuerst einen Kundennamen ein!");
+          return;
+        }
+        document.getElementById("custCode").value = generateCustomerCodeFormat(name);
       }
 
       // Register Service Worker
