@@ -202,10 +202,21 @@ app.patch("/api/update-status/:item_id", adminOnly, async (req, res) => {
   }
 });
 
-// Produkte abrufen
+// Produkte abrufen (nach Beliebtheit sortiert)
 app.get("/api/products", async (req, res) => {
-  const result = await query("SELECT * FROM products");
-  res.json(result.rows);
+  try {
+    const result = await query(`
+      SELECT p.id, p.name, p.unit, p.image_url, COUNT(oi.id)::integer as order_count
+      FROM products p
+      LEFT JOIN order_items oi ON p.id = oi.product_id
+      GROUP BY p.id, p.name, p.unit, p.image_url
+      ORDER BY order_count DESC, p.name ASC;
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fehler beim Laden der Produkte:", err);
+    res.status(500).json({ error: "Fehler beim Laden der Produkte" });
+  }
 });
 
 // Alle Bestellungen für den Fahrer anzeigen

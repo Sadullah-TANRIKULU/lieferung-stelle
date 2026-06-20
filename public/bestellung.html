@@ -574,6 +574,178 @@
           gap: 15px;
         }
       }
+
+      /* Search and Filter Container */
+      .search-filter-container {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(244, 244, 244, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 10px 0;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .search-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        padding: 0 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .search-wrapper:focus-within {
+        border-color: #e95420;
+        box-shadow: 0 0 8px rgba(233, 84, 32, 0.2);
+      }
+
+      .search-icon {
+        font-size: 18px;
+        color: #888;
+        margin-right: 10px;
+      }
+
+      .search-input {
+        width: 100%;
+        border: none;
+        padding: 15px 0;
+        font-size: 18px;
+        font-weight: 500;
+        outline: none;
+        background: transparent;
+      }
+
+      .search-clear-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #999;
+        cursor: pointer;
+        padding: 5px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .search-clear-btn:hover {
+        color: #e95420;
+      }
+
+      .filter-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .toggle-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #555;
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .toggle-btn.active {
+        background: #2c001e;
+        color: white;
+        border-color: #2c001e;
+        box-shadow: 0 4px 12px rgba(44, 0, 30, 0.2);
+      }
+
+      .toggle-btn:hover:not(.active) {
+        background: rgba(0, 0, 0, 0.02);
+        border-color: #bbb;
+      }
+
+      .badge-count {
+        background: #e95420;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 2px 8px;
+        border-radius: 10px;
+        min-width: 20px;
+        text-align: center;
+      }
+
+      .toggle-btn.active .badge-count {
+        background: white;
+        color: #2c001e;
+      }
+
+      /* Product highlight on active selection */
+      .product {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+      }
+
+      .product.active-selection {
+        border-color: rgba(40, 167, 69, 0.4);
+        background: #fdfdfd;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.15);
+      }
+
+      /* Badges styling */
+      .product-badge-container {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 5px;
+      }
+
+      .product-badge {
+        font-size: 11px;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+      }
+
+      .badge-history {
+        background: rgba(233, 84, 32, 0.1);
+        color: #e95420;
+        border: 1px solid rgba(233, 84, 32, 0.2);
+      }
+
+      .badge-active {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.2);
+      }
+
+      @media (max-width: 768px) {
+        .search-filter-container {
+          padding: 8px 0;
+          margin-bottom: 15px;
+        }
+        .search-input {
+          padding: 12px 0;
+          font-size: 16px;
+        }
+        .toggle-btn {
+          padding: 10px 15px;
+          font-size: 14px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -604,6 +776,27 @@
 
     <!-- Tab 1: New Order -->
     <div id="new-order-tab" class="tab-content active">
+      <!-- Search & Filter Controls -->
+      <div class="search-filter-container">
+        <div class="search-wrapper">
+          <span class="search-icon">🔎</span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="Produkte suchen... (z.B. Apfel)" 
+            oninput="filterProducts()"
+          />
+          <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()">×</button>
+        </div>
+        <div class="filter-controls">
+          <button id="toggleSelectedBtn" class="toggle-btn" onclick="toggleShowSelectedOnly()">
+            <span>🛒 Nur ausgewählte Artikel</span>
+            <span id="selectedBadge" class="badge-count" style="display: none;">0</span>
+          </button>
+        </div>
+      </div>
+
       <div id="product-list">
         <div style="text-align: center; padding: 40px; font-size: 20px; color: #666;">
           Produkte werden geladen...
@@ -735,12 +928,18 @@
                 ? `<img src="${p.image_url}" alt="${p.name}" onerror="this.style.display='none'">`
                 : `<div style="width: 140px; height: 140px; background: #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;">Keine Bild</div>`;
 
+              const orderCount = parseInt(p.order_count) || 0;
+              const badgeHtml = orderCount > 0 
+                ? `<div class="product-badge-container"><span class="product-badge badge-history">🔥 ${orderCount}x bestellt</span></div>`
+                : "";
+
               return `
-                <div class="product" data-product-id="${p.id}" data-product-name="${p.name}">
+                <div class="product" data-product-id="${p.id}" data-product-name="${p.name.toLowerCase()}">
                   <div class="product-image-container">
                     ${productImage}
                   </div>
-          <div class="product-details">
+                  <div class="product-details">
+                    ${badgeHtml}
                     <div class="product-name">${p.name}</div>
                     <div class="product-inputs">
                       <input 
@@ -777,20 +976,83 @@
         }
       }
 
+      let showSelectedOnly = false;
+
+      function filterProducts() {
+        const searchInput = document.getElementById("searchInput");
+        if (!searchInput) return;
+        const query = searchInput.value.trim().toLowerCase();
+        const clearBtn = document.getElementById("searchClearBtn");
+        
+        // Show/hide clear button
+        if (clearBtn) {
+          if (query.length > 0) {
+            clearBtn.style.display = "flex";
+          } else {
+            clearBtn.style.display = "none";
+          }
+        }
+
+        const products = document.querySelectorAll(".product");
+        products.forEach(p => {
+          // Check search query match
+          const productName = p.dataset.productName || "";
+          const matchesSearch = productName.includes(query);
+
+          // Check if it has active selection
+          const hasSelection = p.classList.contains("active-selection");
+          
+          // Determine visibility based on both filters
+          const shouldBeVisible = matchesSearch && (!showSelectedOnly || hasSelection);
+
+          if (shouldBeVisible) {
+            p.style.display = "grid";
+          } else {
+            p.style.display = "none";
+          }
+        });
+      }
+
+      function clearSearch() {
+        const searchInput = document.getElementById("searchInput");
+        if (searchInput) {
+          searchInput.value = "";
+          filterProducts();
+          searchInput.focus();
+        }
+      }
+
+      function toggleShowSelectedOnly() {
+        showSelectedOnly = !showSelectedOnly;
+        const btn = document.getElementById("toggleSelectedBtn");
+        if (btn) {
+          if (showSelectedOnly) {
+            btn.classList.add("active");
+          } else {
+            btn.classList.remove("active");
+          }
+        }
+        filterProducts();
+      }
+
       function updateSummary() {
         const items = [];
         const products = document.querySelectorAll(".product");
+        let selectedProductsCount = 0;
 
         products.forEach((p) => {
           const productId = p.dataset.productId;
-          const productName = p.dataset.productName;
+          const productName = p.querySelector(".product-name").textContent;
           
+          let hasActiveSelection = false;
+
           // Get main input
           const mainInput = p.querySelector(".product-quantity");
           const mainSelect = p.querySelector(".product-unit");
           const qty = parseFloat(mainInput.value) || 0;
           
           if (qty > 0) {
+            hasActiveSelection = true;
             items.push({
               name: productName,
               quantity: qty,
@@ -807,6 +1069,7 @@
             const entryQty = parseFloat(entryInput.value) || 0;
             
             if (entryQty > 0) {
+              hasActiveSelection = true;
               items.push({
                 name: productName,
                 quantity: entryQty,
@@ -814,7 +1077,26 @@
               });
             }
           });
+
+          // Apply active visual styling and status
+          if (hasActiveSelection) {
+            p.classList.add("active-selection");
+            selectedProductsCount++;
+          } else {
+            p.classList.remove("active-selection");
+          }
         });
+
+        // Update selected badge
+        const selectedBadge = document.getElementById("selectedBadge");
+        if (selectedBadge) {
+          if (selectedProductsCount > 0) {
+            selectedBadge.textContent = selectedProductsCount;
+            selectedBadge.style.display = "inline-block";
+          } else {
+            selectedBadge.style.display = "none";
+          }
+        }
 
         const summaryContainer = document.getElementById("order-summary");
         const summaryContent = document.getElementById("summary-content");
@@ -834,6 +1116,9 @@
             )
             .join("");
         }
+
+        // Re-apply visibility filtering in case filter mode is active
+        filterProducts();
       }
 
       function addQuantityEntry(productId, button) {
@@ -924,6 +1209,14 @@
             // Reset form
             document.querySelectorAll(".product-quantity").forEach(input => input.value = "0");
             document.querySelectorAll(".quantity-entries").forEach(container => container.innerHTML = "");
+            
+            // Reset search input and filters
+            const searchInput = document.getElementById("searchInput");
+            if (searchInput) searchInput.value = "";
+            showSelectedOnly = false;
+            const toggleBtn = document.getElementById("toggleSelectedBtn");
+            if (toggleBtn) toggleBtn.classList.remove("active");
+            
             updateSummary();
           } else {
             const error = await res.text();
